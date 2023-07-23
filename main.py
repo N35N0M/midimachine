@@ -462,7 +462,64 @@ def dragon_to_pygame(dragon: Dragon, x_pos: int, y_pos: int, surface) -> None:
     )
 
 
+@dataclasses.dataclass
+class Stage_2023:
+    """
+    Represents the stage for the 2023 show.
+    """
+    lightbar_one: LightBar
+    lightbar_two: LightBar
+    lightbar_three: LightBar
+    dragon_left: Dragon
+    dragon_right: Dragon
 
+def create_stage() -> Stage_2023:
+    # Create some lightbars and dragons
+    lightbar_one = LightBar(label="Left lightbar")
+    lightbar_two = LightBar(label="Middle lightbar")
+    lightbar_three = LightBar(label="Right lightbar")
+
+    dragon_one = Dragon(label="Left dragon")
+    dragon_two = Dragon(label="Right dragon")
+
+    return Stage_2023(
+        lightbar_one=lightbar_one,
+        lightbar_two=lightbar_two,
+        lightbar_three=lightbar_three,
+        dragon_left=dragon_one,
+        dragon_right=dragon_two
+    )
+
+def map_stage_to_dmx(stage: Stage_2023):
+    # TODO
+    pass
+
+def map_stage_to_pygame(stage: Stage_2023, surface) -> None:
+    lightbar_to_pygame(
+        lightbar=stage.lightbar_one,
+        x_pos=5,
+        y_pos=200,
+        surface=surface
+    )
+
+    lightbar_to_pygame(
+        lightbar=stage.lightbar_two,
+        x_pos=405,
+        y_pos=200,
+        surface=surface
+    )
+
+    lightbar_to_pygame(
+        lightbar=stage.lightbar_three,
+        x_pos=805,
+        y_pos=200,
+        surface=surface
+    )
+
+    dragon_to_pygame(stage.dragon_left, 350, 5, surface)
+    dragon_to_pygame(stage.dragon_right, 750, 5, surface)
+
+    pygame.display.flip()
 
 if __name__ == "__main__":
     # main()
@@ -479,43 +536,15 @@ if __name__ == "__main__":
     dragon_breath = pygame.transform.scale(dragon_breath, (50, 50))
     dragon_breath = pygame.transform.rotate(dragon_breath, 180)
 
-    # Create some lightbars and dragons
-    lightbar_one = LightBar(label="Left lightbar")
-    lightbar_two = LightBar(label="Middle lightbar")
-    lightbar_three = LightBar(label="Right lightbar")
+    stage = create_stage()
 
-    dragon_one = Dragon(label="Left dragon")
-    dragon_two = Dragon(label="Right dragon")
-
-    lightbar_to_pygame(
-        lightbar=lightbar_one,
-        x_pos=5,
-        y_pos=200,
-        surface=surface
-    )
-
-    lightbar_to_pygame(
-        lightbar=lightbar_two,
-        x_pos=405,
-        y_pos=200,
-        surface=surface
-    )
-
-    lightbar_to_pygame(
-        lightbar=lightbar_three,
-        x_pos=805,
-        y_pos=200,
-        surface=surface
-    )
-
-    dragon_to_pygame(dragon_one, 350, 5, surface)
-    dragon_to_pygame(dragon_two, 750, 5, surface)
+    # Render the initial state of the stage
+    map_stage_to_pygame(stage, surface)
+    # map_stage_to_dmx(stage)
 
 
 
 
-    # Display panel
-    pygame.display.flip()
 
     while True:
         pass
