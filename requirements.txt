@@ -1,2 +1,3 @@
 pygame==2.5.0
-rtmidi==2.5.0
+python-rtmidi
+pyserial==3.5

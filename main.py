@@ -9,9 +9,8 @@ import sys
 import time
 import typing
 
+import DMXEnttecPro.src.DMXEnttecPro.controller as dmx_driver
 import pygame
-from entec_pro.controller import Controller
-
 from rtmidi.midiutil import open_midiinput
 
 log = logging.getLogger('midiin_callback')
@@ -23,31 +22,39 @@ pixels = typing.Dict[int, typing.Tuple[int, int, int]]
 # size = [400, 300]
 # screen = pygame.display.set_mode(size)
 
-def generate_random_color():
-    return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+@dataclasses.dataclass
+class RgbPixel:
+    red: int  # 0-255
+    green: int  # 0-255
+    blue: int  # 0-255
+
+
+def generate_random_color() -> RgbPixel:
+    return RgbPixel(
+        red=random.randint(0, 255),
+        green=random.randint(0, 255),
+        blue=random.randint(0, 255)
+    )
+
 
 class LightBar:
-    """A class for working with lightbar at 96 channel mode."""
-    def __init__(self, start_address: int):
-        self.start_address = start_address
-        self.pixels = {}
-        for i in range(32):
-            self.pixels[i] = (0, 0, 0)
+    """
+    A class for working with the lightbar in 96 channel mode.
+    TODO: Light bar model name name
 
-    pixels: typing.Dict[int, typing.Tuple[int, int, int]]
+    """
+    def __init__(self, label: str):
+        self.pixels: typing.List[RgbPixel] = [generate_random_color() for _ in range(32)]
+        self.label = label
 
-    def set_pixel(self, pixel: int, color: typing.Tuple[int, int, int]):
+    def set_pixel(self, pixel: int, color: RgbPixel):
+        if pixel > 31:
+            raise ValueError("Pixel value must be less than 32.")
         self.pixels[pixel] = color
 
     def clear_pixels(self):
-        for pixel in self.pixels:
-            self.pixels[pixel] = (0, 0, 0)
-
-    def send_to_controller(self, controller: Controller):
-        for pixel, color in self.pixels.items():
-            controller.set_channel((self.start_address)+3*pixel, color[0])  # R
-            controller.set_channel((self.start_address+1)+3*pixel, color[1])  # G
-            controller.set_channel((self.start_address+2)+3*pixel, color[2])  # B
+        for i in range(len(self.pixels)):
+            self.pixels[i] = RgbPixel(0, 0, 0)
 
 def beat_square_to_lightbar_mapping(beat_square_position: int, lightbars: typing.List[LightBar]) -> typing.List[pixels]:
     """Returns a list of pixels for each lightbar."""
@@ -56,7 +63,6 @@ def beat_square_to_lightbar_mapping(beat_square_position: int, lightbars: typing
         pixels.append(lightbar.pixels[beat_square_position])
     return pixels
 
-Color = typing.Tuple[int, int, int]
 
 
 class UpdateFrequency(enum.Enum):
@@ -83,7 +89,7 @@ Either specify a random number of bars to change, or specify pairings to change 
 @dataclasses.dataclass
 class RandomColorChangesLightBar:
     update_frequency: UpdateFrequency = UpdateFrequency.HALF_BEAT
-    lightbar_color: typing.List[Color] = dataclasses.field(default_factory=lambda: [generate_random_color() for i in range(3)])
+    lightbar_color: typing.List[RgbPixel] = dataclasses.field(default_factory=lambda: [generate_random_color() for i in range(3)])
     bar_update_type: ColorChangeLightBar = OrganizedUpdateOfLightbars()
     counter = 0
 
@@ -327,13 +333,13 @@ class MidiInputHandler(object):
 # Address ??: Smoke machine left
 # Address ??: Smoke machine right
 
-ctrl = Controller(
-    port_string="/dev/cu.usbserial-EN379589",
-    dmx_size=512,
-    baudrate=250000,
-    timeout=1,
-    auto_submit=False,
-)
+# ctrl = dmx_driver.Controller(
+#     port_string="/dev/cu.usbserial-EN379589",
+#     dmx_size=512,
+#     baudrate=250000,
+#     timeout=1,
+#     auto_submit=False,
+# )
 
 
 
@@ -393,39 +399,82 @@ def main():
 # ... seems like the LED par cans are kinda shit:D
 # (Should have known given the price...)
 
+
+
+
+def lightbar_to_pygame(lightbar: LightBar, x_pos: int, y_pos: int, surface) -> None:
+    """
+    Draws the lightbar in the pygame window at the specified position.
+    """
+
+    pixel_size = 10
+    for i in range(len(lightbar.pixels)):
+        final_position = x_pos + i*pixel_size
+        if i != 0:
+            # Pad between pixels
+            final_position += 2*i
+        pygame.draw.rect(
+            surface=surface,
+            color=(lightbar.pixels[i].red, lightbar.pixels[i].green, lightbar.pixels[i].blue),
+            rect=pygame.Rect(final_position, y_pos, pixel_size,pixel_size
+            )
+        )
+    pygame.draw.line(
+        surface=surface,
+        color=(255,255,255),
+        start_pos=(x_pos, y_pos+12),
+        end_pos=(x_pos + 31*pixel_size + 2*31 + pixel_size, y_pos+12)
+    )
+    font = pygame.font.SysFont(None, 24)
+    img = font.render(lightbar.label, True, (255,255,255))
+    surface.blit(img, (x_pos+135, y_pos+13))
+
+
 if __name__ == "__main__":
     # main()
 
-    # SMOKE
-    #ctrl.set_channel(2,209)
-    #ctrl.set_channel(1,255)
-    #time.sleep(2)
-    #ctrl.set_channel(1,0)
+    # TODO: Take in args to decide whether we are doing simulation or live? Or can pygame always be helpful?
+
+    # Initializing Pygame and surface
+    pygame.init()
+    surface = pygame.display.set_mode((1190, 300))
+    dragon_icon = pygame.image.load('dragon_icon.png')
+    dragon_icon = pygame.transform.scale(dragon_icon, (100,100))
 
 
-    # RED LIGHT
 
-    # GREEN LIGHT
-    #ctrl.set_channel(3,109)
+    # Create some lightbars
+    lightbar_one = LightBar(label="Left lightbar")
+    lightbar_two = LightBar(label="Middle lightbar")
+    lightbar_three = LightBar(label="Right lightbar")
 
-    # BLUE LIGHT
+
+    lightbar_to_pygame(
+        lightbar=lightbar_one,
+        x_pos=5,
+        y_pos=200,
+        surface=surface
+    )
+
+    lightbar_to_pygame(
+        lightbar=lightbar_two,
+        x_pos=405,
+        y_pos=200,
+        surface=surface
+    )
+
+    lightbar_to_pygame(
+        lightbar=lightbar_three,
+        x_pos=805,
+        y_pos=200,
+        surface=surface
+    )
+
+    surface.blit(dragon_icon, (345,10))
+    surface.blit(dragon_icon, (745,10))
+
+    # Display panel
+    pygame.display.flip()
+
     while True:
-        for i in range(255):
-            ctrl.set_channel(4,i)
-            ctrl.submit()
-
-        for i in reversed(range(255)):
-            ctrl.set_channel(4,i)
-            ctrl.submit()
-
-    # LED FLASH
-    # ctrl.set_channel(5,255)
-
-    # COLOR FADE
-    # ctrl.set_channel(6,255)
-
-    # SPEED ADJUST
-    ctrl.set_channel(7,255)
-
-    ctrl.submit()
-
+        pass
