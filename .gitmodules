@@ -1,0 +1,3 @@
+[submodule "DMXEnttecPro"]
+	path = DMXEnttecPro
+	url = git@github.com:N35N0M/DMXEnttecPro.git
