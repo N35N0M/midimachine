@@ -1,4 +1,3 @@
-
 from __future__ import print_function
 
 import dataclasses
@@ -18,6 +17,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 pixels = typing.Dict[int, typing.Tuple[int, int, int]]
 
+
 # pygame.init()
 # size = [400, 300]
 # screen = pygame.display.set_mode(size)
@@ -36,6 +36,12 @@ def generate_random_color() -> RgbPixel:
         blue=random.randint(0, 255)
     )
 
+class Dragon:
+    def __init__(self, label: str):
+        self.left_eye: RgbPixel = generate_random_color()
+        self.right_eye: RgbPixel = generate_random_color()
+        self.smoke_machine_on: bool = random.sample([True, False], 1)[0]
+        self.label = label
 
 class LightBar:
     """
@@ -43,6 +49,7 @@ class LightBar:
     TODO: Light bar model name name
 
     """
+
     def __init__(self, label: str):
         self.pixels: typing.List[RgbPixel] = [generate_random_color() for _ in range(32)]
         self.label = label
@@ -56,13 +63,13 @@ class LightBar:
         for i in range(len(self.pixels)):
             self.pixels[i] = RgbPixel(0, 0, 0)
 
+
 def beat_square_to_lightbar_mapping(beat_square_position: int, lightbars: typing.List[LightBar]) -> typing.List[pixels]:
     """Returns a list of pixels for each lightbar."""
     pixels = []
     for lightbar in lightbars:
         pixels.append(lightbar.pixels[beat_square_position])
     return pixels
-
 
 
 class UpdateFrequency(enum.Enum):
@@ -76,20 +83,24 @@ class UpdateFrequency(enum.Enum):
 class RandomUpdateAmountOfLightbars:
     amount_of_lightbars: int = 1
 
+
 @dataclasses.dataclass
 class OrganizedUpdateOfLightbars:
     lightbar_pairings: typing.List[typing.List[int]] = dataclasses.field(default_factory=lambda: [[1], [0, 2]])
     groups_must_have_same_color: bool = True
+
 
 ColorChangeLightBar = typing.Union[RandomUpdateAmountOfLightbars, OrganizedUpdateOfLightbars]
 """
 Either specify a random number of bars to change, or specify pairings to change sequentially.
 """
 
+
 @dataclasses.dataclass
 class RandomColorChangesLightBar:
     update_frequency: UpdateFrequency = UpdateFrequency.HALF_BEAT
-    lightbar_color: typing.List[RgbPixel] = dataclasses.field(default_factory=lambda: [generate_random_color() for i in range(3)])
+    lightbar_color: typing.List[RgbPixel] = dataclasses.field(
+        default_factory=lambda: [generate_random_color() for i in range(3)])
     bar_update_type: ColorChangeLightBar = OrganizedUpdateOfLightbars()
     counter = 0
 
@@ -102,9 +113,11 @@ class Mode(enum.Enum):
     BEAT_SQUARE_BOUNCING = 5
     RANDOM_LIGHTBAR_CHANGES_COLOR = RandomColorChangesLightBar()
 
+
 class Direction(enum.Enum):
     RIGHT = 1
     LEFT = 2
+
 
 class MidiInputHandler(object):
     def __init__(self, port):
@@ -151,10 +164,10 @@ class MidiInputHandler(object):
                         self.lightbar_order[0].set_pixel(lightbar_pixel_mod, self.current_color)
                         self.lightbar_order[0].send_to_controller(ctrl)
                     elif lightbar_pixel_mod < 64:
-                        self.lightbar_order[1].set_pixel(lightbar_pixel_mod-32, self.current_color)
+                        self.lightbar_order[1].set_pixel(lightbar_pixel_mod - 32, self.current_color)
                         self.lightbar_order[1].send_to_controller(ctrl)
                     else:
-                        self.lightbar_order[2].set_pixel(lightbar_pixel_mod-64, self.current_color)
+                        self.lightbar_order[2].set_pixel(lightbar_pixel_mod - 64, self.current_color)
                         self.lightbar_order[2].send_to_controller(ctrl)
                 elif self.mode == Mode.RAINBOW_BLINK:
                     for i in range(32):
@@ -193,7 +206,8 @@ class MidiInputHandler(object):
                                 self.lightbar_order[bar].pixels[pixel] = self.mode.value.lightbar_color[bar]
                             self.lightbar_order[bar].send_to_controller(ctrl)
                     elif isinstance(self.mode.value.bar_update_type, OrganizedUpdateOfLightbars):
-                        bars_to_change = self.mode.value.bar_update_type.lightbar_pairings[self.mode.value.counter%len(self.mode.value.bar_update_type.lightbar_pairings)]
+                        bars_to_change = self.mode.value.bar_update_type.lightbar_pairings[
+                            self.mode.value.counter % len(self.mode.value.bar_update_type.lightbar_pairings)]
                         self.mode.value.counter += 1
                         # Then perform update on those bars.
                         if self.mode.value.bar_update_type.groups_must_have_same_color:
@@ -241,9 +255,9 @@ class MidiInputHandler(object):
                         if pixel_position < 32:
                             self.lightbar_order[0].set_pixel(pixel_position, self.current_color)
                         elif pixel_position < 64:
-                            self.lightbar_order[1].set_pixel(pixel_position-32, self.current_color)
+                            self.lightbar_order[1].set_pixel(pixel_position - 32, self.current_color)
                         else:
-                            self.lightbar_order[2].set_pixel(pixel_position-64, self.current_color)
+                            self.lightbar_order[2].set_pixel(pixel_position - 64, self.current_color)
 
                     self.lightbar_order[0].send_to_controller(ctrl)
                     self.lightbar_order[1].send_to_controller(ctrl)
@@ -274,11 +288,11 @@ class MidiInputHandler(object):
                         ]
                     else:
                         pixel_positions = [
-                            96-(int((self.pulse_counter * step) + 4)),
-                            96-(int((self.pulse_counter * step) + 3)),
-                            96-(int((self.pulse_counter * step) + 2)),
-                            96-(int((self.pulse_counter * step) + 1)),
-                            96-(int((self.pulse_counter * step) + 0)),
+                            96 - (int((self.pulse_counter * step) + 4)),
+                            96 - (int((self.pulse_counter * step) + 3)),
+                            96 - (int((self.pulse_counter * step) + 2)),
+                            96 - (int((self.pulse_counter * step) + 1)),
+                            96 - (int((self.pulse_counter * step) + 0)),
                         ]
 
                     # Ensure we do not overflow or underflow
@@ -292,9 +306,9 @@ class MidiInputHandler(object):
                         if pixel_position < 32:
                             self.lightbar_order[0].set_pixel(pixel_position, self.current_color)
                         elif pixel_position < 64:
-                            self.lightbar_order[1].set_pixel(pixel_position-32, self.current_color)
+                            self.lightbar_order[1].set_pixel(pixel_position - 32, self.current_color)
                         else:
-                            self.lightbar_order[2].set_pixel(pixel_position-64, self.current_color)
+                            self.lightbar_order[2].set_pixel(pixel_position - 64, self.current_color)
 
                     self.lightbar_order[0].send_to_controller(ctrl)
                     self.lightbar_order[1].send_to_controller(ctrl)
@@ -340,9 +354,6 @@ class MidiInputHandler(object):
 #     timeout=1,
 #     auto_submit=False,
 # )
-
-
-
 
 
 def main():
@@ -400,8 +411,6 @@ def main():
 # (Should have known given the price...)
 
 
-
-
 def lightbar_to_pygame(lightbar: LightBar, x_pos: int, y_pos: int, surface) -> None:
     """
     Draws the lightbar in the pygame window at the specified position.
@@ -409,25 +418,50 @@ def lightbar_to_pygame(lightbar: LightBar, x_pos: int, y_pos: int, surface) -> N
 
     pixel_size = 10
     for i in range(len(lightbar.pixels)):
-        final_position = x_pos + i*pixel_size
+        final_position = x_pos + i * pixel_size
         if i != 0:
             # Pad between pixels
-            final_position += 2*i
+            final_position += 2 * i
         pygame.draw.rect(
             surface=surface,
             color=(lightbar.pixels[i].red, lightbar.pixels[i].green, lightbar.pixels[i].blue),
-            rect=pygame.Rect(final_position, y_pos, pixel_size,pixel_size
-            )
+            rect=pygame.Rect(final_position, y_pos, pixel_size, pixel_size
+                             )
         )
     pygame.draw.line(
         surface=surface,
-        color=(255,255,255),
-        start_pos=(x_pos, y_pos+12),
-        end_pos=(x_pos + 31*pixel_size + 2*31 + pixel_size, y_pos+12)
+        color=(255, 255, 255),
+        start_pos=(x_pos, y_pos + 12),
+        end_pos=(x_pos + 31 * pixel_size + 2 * 31 + pixel_size, y_pos + 12)
     )
     font = pygame.font.SysFont(None, 24)
-    img = font.render(lightbar.label, True, (255,255,255))
-    surface.blit(img, (x_pos+135, y_pos+13))
+    img = font.render(lightbar.label, True, (255, 255, 255))
+    surface.blit(img, (x_pos + 135, y_pos + 13))
+
+def dragon_to_pygame(dragon: Dragon, x_pos: int, y_pos: int, surface) -> None:
+    """
+    Draws the dragon in the pygame window at the specified position.
+    """
+    surface.blit(dragon_icon, (x_pos, y_pos))
+
+    if dragon.smoke_machine_on:
+        surface.blit(dragon_breath , (x_pos+25, y_pos+100))
+
+    pygame.draw.rect(
+        surface=surface,
+        color=(dragon.left_eye.red, dragon.left_eye.green, dragon.left_eye.blue),
+        rect=pygame.Rect(x_pos+25, y_pos+50, 20, 20
+                         )
+    )
+
+    pygame.draw.rect(
+        surface=surface,
+        color=(dragon.right_eye.red, dragon.right_eye.green, dragon.right_eye.blue),
+        rect=pygame.Rect(x_pos+55, y_pos+50, 20, 20
+                         )
+    )
+
+
 
 
 if __name__ == "__main__":
@@ -439,15 +473,19 @@ if __name__ == "__main__":
     pygame.init()
     surface = pygame.display.set_mode((1190, 300))
     dragon_icon = pygame.image.load('dragon_icon.png')
-    dragon_icon = pygame.transform.scale(dragon_icon, (100,100))
+    dragon_icon = pygame.transform.scale(dragon_icon, (100, 100))
 
+    dragon_breath = pygame.image.load('fire.jpg')
+    dragon_breath = pygame.transform.scale(dragon_breath, (50, 50))
+    dragon_breath = pygame.transform.rotate(dragon_breath, 180)
 
-
-    # Create some lightbars
+    # Create some lightbars and dragons
     lightbar_one = LightBar(label="Left lightbar")
     lightbar_two = LightBar(label="Middle lightbar")
     lightbar_three = LightBar(label="Right lightbar")
 
+    dragon_one = Dragon(label="Left dragon")
+    dragon_two = Dragon(label="Right dragon")
 
     lightbar_to_pygame(
         lightbar=lightbar_one,
@@ -470,8 +508,11 @@ if __name__ == "__main__":
         surface=surface
     )
 
-    surface.blit(dragon_icon, (345,10))
-    surface.blit(dragon_icon, (745,10))
+    dragon_to_pygame(dragon_one, 350, 5, surface)
+    dragon_to_pygame(dragon_two, 750, 5, surface)
+
+
+
 
     # Display panel
     pygame.display.flip()
