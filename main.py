@@ -5,6 +5,7 @@ import time
 import pygame
 from rtmidi.midiutil import open_midiinput
 
+from lightbar.lightbar_designer import LightbarDesigner
 from midi.midi_input_handler import MidiInputHandler
 from stage.pygame_adapter import map_stage_to_pygame
 from stage.stage import create_stage
@@ -23,7 +24,8 @@ def main():
         sys.exit()
 
     print("Attaching MIDI input callback handler.")
-    midiin.set_callback(MidiInputHandler(port_name))
+    midi_input_handler = MidiInputHandler(port_name)
+    midiin.set_callback(midi_input_handler)
 
     print("Initializing stage")
     pygame.init()
@@ -31,20 +33,16 @@ def main():
 
 
     stage = create_stage()
-
-    while True:
-        # Refresh at 44Hz (the "standard" framerate for DMX)
-        map_stage_to_pygame(stage, surface)
-        # map_stage_to_dmx(stage)
-        stage.dragon_left.left_eye = generate_random_color()
-        time.sleep(1/44)
+    lightbar_designer = LightbarDesigner(midi_input_handler, stage.lightbar_one, stage.lightbar_three, stage.lightbar_two)
 
     print("Entering main loop. Press Control-C to exit.")
     try:
-        # Just wait for keyboard interrupt,
-        # everything else is handled via the input callback.
         while True:
-            time.sleep(1)
+            # Refresh at 44Hz (the "standard" framerate for DMX)
+            map_stage_to_pygame(stage, surface)
+            # map_stage_to_dmx(stage)
+            stage.dragon_left.left_eye = generate_random_color()
+            time.sleep(1 / 44)
 
     except KeyboardInterrupt:
         print('')
