@@ -40,7 +40,7 @@ class Dragon:
     def __init__(self, label: str):
         self.left_eye: RgbPixel = generate_random_color()
         self.right_eye: RgbPixel = generate_random_color()
-        self.smoke_machine_on: bool = random.sample([True, False], 1)[0]
+        self.smoke_machine_on: bool = False # Smoke machines should always prefer OFF. Expensive...
         self.label = label
 
 class LightBar:
@@ -539,12 +539,11 @@ if __name__ == "__main__":
     stage = create_stage()
 
     # Render the initial state of the stage
-    map_stage_to_pygame(stage, surface)
     # map_stage_to_dmx(stage)
 
-
-
-
-
     while True:
-        pass
+        # Refresh at 44Hz (the "standard" framerate for DMX)
+        map_stage_to_pygame(stage, surface)
+        stage.dragon_left.left_eye = generate_random_color()
+        time.sleep(1/44)
+
