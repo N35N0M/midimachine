@@ -4,6 +4,7 @@ import dataclasses
 
 from dragon.dragon import Dragon
 from lightbar.lightbar import LightBar
+from traktor_metadata import TraktorMetadata
 
 
 @dataclasses.dataclass
@@ -16,9 +17,10 @@ class Stage_2023:
     lightbar_three: LightBar
     dragon_left: Dragon
     dragon_right: Dragon
+    traktor_metadata: TraktorMetadata
 
 
-def create_stage() -> Stage_2023:
+def create_stage(traktor_metadata: TraktorMetadata) -> Stage_2023:
     # Create some lightbars and dragons
     lightbar_one = LightBar(label="Left lightbar")
     lightbar_two = LightBar(label="Middle lightbar")
@@ -32,5 +34,6 @@ def create_stage() -> Stage_2023:
         lightbar_two=lightbar_two,
         lightbar_three=lightbar_three,
         dragon_left=dragon_one,
-        dragon_right=dragon_two
+        dragon_right=dragon_two,
+        traktor_metadata=traktor_metadata
     )

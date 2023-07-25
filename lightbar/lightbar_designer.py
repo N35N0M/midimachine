@@ -6,7 +6,11 @@ import typing
 from lightbar.lightbar import LightBar
 from common_types import UpdateFrequency, RgbPixel
 from midi.midi_input_handler import MidiInputHandler
+from traktor_metadata import TraktorMetadata
 from utils import generate_random_color
+
+from collections import deque
+from itertools import islice
 
 
 
@@ -16,7 +20,7 @@ class RandomUpdateAmountOfLightbars:
 
 @dataclasses.dataclass
 class OrganizedUpdateOfLightbars:
-    lightbar_pairings: typing.List[typing.List[int]] = dataclasses.field(default_factory=lambda: [[1], [0, 2]])
+    lightbar_pairings: typing.List[typing.List[int]] = dataclasses.field(default_factory=lambda: [[0],[1],[2]])
     groups_must_have_same_color: bool = True
 
 
@@ -36,6 +40,39 @@ class RandomColorChangesLightBar:
     bar_update_type: ColorChangeLightBar = OrganizedUpdateOfLightbars()
     counter = 0
 
+@dataclasses.dataclass
+class TankEngineState:
+    update_frequency: UpdateFrequency = UpdateFrequency.BEAT
+    counter = 0
+    """Draw thomas the tank engine."""
+    pixels: deque[RgbPixel] = deque([
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(25, 25, 255),
+                                        RgbPixel(25, 25, 255),
+                                        RgbPixel(25, 25, 255),
+                                        RgbPixel(107, 107, 107),
+                                    ] + [RgbPixel(0, 0, 0) for _ in range(96 - 25)])
+
 class Mode(enum.Enum):
     DRAW_TOWARDS_RIGHT = 1
     RAINBOW_BLINK = 2
@@ -43,19 +80,22 @@ class Mode(enum.Enum):
     BEAT_SQUARE = 4
     BEAT_SQUARE_BOUNCING = 5
     RANDOM_LIGHTBAR_CHANGES_COLOR = RandomColorChangesLightBar()
+    THOMAS_THE_DANK_ENGINE = 7
 
 class UpdateType(enum.Enum):
     PULSE = 1
     BEAT = 2
 
 class LightbarDesigner:
-    def __init__(self, midi_clock, lightbar_left, lightbar_right, lightbar_center):
+    def __init__(self, midi_clock, lightbar_left, lightbar_right, lightbar_center, traktor_metadata: TraktorMetadata):
         self.midi_clock: MidiInputHandler = midi_clock
         self.lightbar_left: LightBar = lightbar_left
         self.lightbar_center: LightBar = lightbar_center
         self.lightbar_right: LightBar = lightbar_right
+        self.traktor_metadata: TraktorMetadata = traktor_metadata
         self.current_color = generate_random_color()
         self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
+        self.modestate:  typing.Union[TankEngineState, None] = None
         self.direction = Direction.RIGHT
         self.pulse_effect_started = False
         self.internal_pulse_counter = 0
@@ -76,8 +116,12 @@ class LightbarDesigner:
         self.render(UpdateType.BEAT)
 
     def render(self, update_type: UpdateType):
+        # PREPROGRAMMED SONGS
+        if self.traktor_metadata.current_track_deck_a == "Biggie smalls the tank engine":
+            self.mode = Mode.THOMAS_THE_DANK_ENGINE
+            self.modestate = TankEngineState()
         # BEAT BASED EFFECTS
-        if update_type == UpdateType.BEAT and self.mode in [Mode.DRAW_TOWARDS_RIGHT, Mode.RAINBOW_BLINK, Mode.BLINK, Mode.RANDOM_LIGHTBAR_CHANGES_COLOR]:
+        if update_type == UpdateType.BEAT and self.mode in [Mode.DRAW_TOWARDS_RIGHT, Mode.RAINBOW_BLINK, Mode.BLINK, Mode.RANDOM_LIGHTBAR_CHANGES_COLOR, Mode.THOMAS_THE_DANK_ENGINE]:
             print(f"Beat render!")
             if self.mode == Mode.DRAW_TOWARDS_RIGHT:
                 lightbar_pixel_mod = self.internal_beat_counter % 96
@@ -89,6 +133,13 @@ class LightbarDesigner:
                     self.lightbar_center.set_pixel(lightbar_pixel_mod - 32, self.current_color)
                 else:
                     self.lightbar_right.set_pixel(lightbar_pixel_mod - 64, self.current_color)
+            elif self.mode == Mode.THOMAS_THE_DANK_ENGINE:
+                self.lightbar_left.pixels = list(islice(self.modestate.pixels, 0, 32))
+                self.lightbar_center.pixels = list(islice(self.modestate.pixels, 32, 64))
+                self.lightbar_right.pixels = list(islice(self.modestate.pixels, 64, 96))
+                self.modestate.pixels.rotate(1)
+
+                return
             elif self.mode == Mode.RAINBOW_BLINK:
                 for i in range(32):
                     self.lightbar_left.set_pixel(i, self.current_color)
@@ -139,7 +190,6 @@ class LightbarDesigner:
         # PULSE BASED EFFECTS
         if self.mode == Mode.BEAT_SQUARE:
             if not self.pulse_effect_started:
-                if self.pulse_counter % 24 == 0:
                     self.pulse_counter = 0
                     self.direction = Direction.RIGHT
                     self.pulse_effect_started = True

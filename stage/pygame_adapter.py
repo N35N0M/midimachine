@@ -48,7 +48,7 @@ def dragon_to_pygame(dragon: Dragon, x_pos: int, y_pos: int, surface) -> None:
     surface.blit(dragon_icon, (x_pos, y_pos))
 
     if dragon.smoke_machine_on:
-        surface.blit(dragon_breath , (x_pos+25, y_pos+100))
+        surface.blit(dragon_breath, (x_pos+25, y_pos+100))
 
     pygame.draw.rect(
         surface=surface,
@@ -66,6 +66,7 @@ def dragon_to_pygame(dragon: Dragon, x_pos: int, y_pos: int, surface) -> None:
 
 
 def map_stage_to_pygame(stage: Stage_2023, surface) -> None:
+    surface.fill((0, 0, 0))
     lightbar_to_pygame(
         lightbar=stage.lightbar_one,
         x_pos=5,
@@ -89,5 +90,13 @@ def map_stage_to_pygame(stage: Stage_2023, surface) -> None:
 
     dragon_to_pygame(stage.dragon_left, 350, 5, surface)
     dragon_to_pygame(stage.dragon_right, 750, 5, surface)
+
+    font = pygame.font.SysFont("arial", 24)
+    img = font.render(f"Deck A: {stage.traktor_metadata.current_track_deck_a}", True, (255, 255, 255))
+    surface.blit(img, (50, 250))
+
+    font = pygame.font.SysFont("arial", 24)
+    img = font.render(f"{stage.traktor_metadata.current_track_elapsed_deck_a}", True, (255, 255, 255))
+    surface.blit(img, (550, 250))
 
     pygame.display.flip()
