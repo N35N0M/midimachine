@@ -5,11 +5,9 @@ from enum import Enum
 
 from common_types import RgbPixel
 from dragon.dragon import Dragon
-from lightbar.lightbar import LightBar
 from lightbar.lightbar_designer import UpdateType
 from midi.midi_input_handler import MidiInputHandler
 from stage.stage import Stage_2023
-from traktor_metadata import TraktorMetadata
 
 class LastFired(Enum):
     LEFT = 1
@@ -50,7 +48,7 @@ class DragonDesigner:
             time.sleep(1)
             dragon.smoke_machine_on = False
         thr = threading.Thread(target=dragon_burst, args=(dragon,), kwargs={})
-        thr.start()  # Will run "foo"
+        thr.start()
 
     def render(self, update_type):
         if self.stage.traktor_metadata.current_track_deck_a == "Biggie smalls the tank engine":
