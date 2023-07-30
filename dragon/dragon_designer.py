@@ -18,6 +18,10 @@ class ThomasState:
 
 class DragonMode(Enum):
     THOMAS_THE_TANK_ENGINE = 1
+    EYES_OFF = 2
+    ALL_OFF = 3
+    PULSING_EYES = 4
+    CRAZY_EYES = 5
 
 class DragonDesigner:
     def __init__(self, midi_clock, stage: Stage_2023):
@@ -55,6 +59,93 @@ class DragonDesigner:
             self.mode = DragonMode.THOMAS_THE_TANK_ENGINE
             if self.modestate is None:
                 self.modestate = ThomasState()
+
+        if self.stage.traktor_metadata.current_track_deck_a == "The Girl and the Robot":
+            # Eye cues
+            if (16 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 31) or \
+                    (80 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 95) or \
+                    (144 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 158) or \
+                    (159 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 173):
+                self.mode = DragonMode.PULSING_EYES
+            elif (48 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 78) or \
+                    (111 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 126) or \
+                    (134 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 159) or \
+                    (198 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 236) or \
+                    (0 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 16):
+                self.mode = DragonMode.CRAZY_EYES
+            else:
+                self.mode = DragonMode.EYES_OFF
+
+            # Smoke cues
+            if (21 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 31) or \
+                    (127 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 134):
+                self.stage.dragon_left.smoke_machine_on = True
+                self.stage.dragon_right.smoke_machine_on = True
+            else:
+                self.stage.dragon_left.smoke_machine_on = False
+                self.stage.dragon_right.smoke_machine_on = False
+
+        if self.mode == DragonMode.ALL_OFF:
+            self.stage.dragon_left.left_eye = RgbPixel(0, 0, 0)
+            self.stage.dragon_left.right_eye = RgbPixel(0, 0, 0)
+            self.stage.dragon_right.left_eye = RgbPixel(0, 0, 0)
+            self.stage.dragon_right.right_eye = RgbPixel(0, 0, 0)
+            self.stage.dragon_left.smoke_machine_on = False
+            self.stage.dragon_right.smoke_machine_on = False
+            return
+        if self.mode == DragonMode.EYES_OFF:
+            self.stage.dragon_left.left_eye = RgbPixel(0, 0, 0)
+            self.stage.dragon_left.right_eye = RgbPixel(0, 0, 0)
+            self.stage.dragon_right.left_eye = RgbPixel(0, 0, 0)
+            self.stage.dragon_right.right_eye = RgbPixel(0, 0, 0)
+            return
+        if self.mode == DragonMode.PULSING_EYES:
+            counter_val = self.internal_pulse_counter % 48
+            if counter_val < 24:
+                self.stage.dragon_left.left_eye = RgbPixel(0, 0, int((255/24)*counter_val))
+                self.stage.dragon_left.right_eye = RgbPixel(0, 0, int((255/24)*counter_val))
+                self.stage.dragon_right.left_eye = RgbPixel(0, 0, int((255/24)*counter_val))
+                self.stage.dragon_right.right_eye = RgbPixel(0, 0, int((255/24)*counter_val))
+            else:
+                self.stage.dragon_left.left_eye = RgbPixel(0, 0, int(255 - ((255/24)*(counter_val-24))))
+                self.stage.dragon_left.right_eye = RgbPixel(0, 0, int(255 - ((255/24)*(counter_val-24))))
+                self.stage.dragon_right.left_eye = RgbPixel(0, 0, int(255 - ((255/24)*(counter_val-24))))
+                self.stage.dragon_right.right_eye = RgbPixel(0, 0, int(255 - ((255/24)*(counter_val-24))))
+
+        if self.mode == DragonMode.CRAZY_EYES:
+            counter_val = self.internal_pulse_counter % (96)
+            if 0 < counter_val < 24:
+                self.stage.dragon_left.left_eye = RgbPixel(0, 0, int((255/24)*counter_val))
+                self.stage.dragon_left.right_eye = RgbPixel(0, 0, int((255/24)*counter_val))
+                self.stage.dragon_right.left_eye = RgbPixel(0, 0, int((255/24)*counter_val))
+                self.stage.dragon_right.right_eye = RgbPixel(0, 0, int((255/24)*counter_val))
+            if 24 < counter_val < 48:
+                self.stage.dragon_left.left_eye = RgbPixel(0, 0, int(255 - ((255/24)*(counter_val-24))))
+                self.stage.dragon_left.right_eye = RgbPixel(0, 0, int(255 - ((255/24)*(counter_val-24))))
+                self.stage.dragon_right.left_eye = RgbPixel(0, 0, int(255 - ((255/24)*(counter_val-24))))
+                self.stage.dragon_right.right_eye = RgbPixel(0, 0, int(255 - ((255/24)*(counter_val-24))))
+
+                self.stage.dragon_left.left_eye = RgbPixel(0, int((255 / 24) * (counter_val-24)), 0)
+                self.stage.dragon_left.right_eye = RgbPixel(0, int((255 / 24) * (counter_val-24)), 0)
+                self.stage.dragon_right.left_eye = RgbPixel(0, int((255 / 24) * (counter_val-24)), 0)
+                self.stage.dragon_right.right_eye = RgbPixel(0, int((255 / 24) * (counter_val-24)), 0)
+            if 48 < counter_val < 72:
+                self.stage.dragon_left.left_eye = RgbPixel(0, int(255 - ((255 / 24) * (counter_val - 48))), 0)
+                self.stage.dragon_left.right_eye = RgbPixel(0, int(255 - ((255 / 24) * (counter_val - 48))), 0)
+                self.stage.dragon_right.left_eye = RgbPixel(0, int(255 - ((255 / 24) * (counter_val - 48))), 0)
+                self.stage.dragon_right.right_eye = RgbPixel(0, int(255 - ((255 / 24) * (counter_val - 48))), 0)
+
+                self.stage.dragon_left.left_eye = RgbPixel(int((255 / 24) * (counter_val-48)), 0, 0)
+                self.stage.dragon_left.right_eye = RgbPixel(int((255 / 24) * (counter_val-48)), 0, 0)
+                self.stage.dragon_right.left_eye = RgbPixel(int((255 / 24) * (counter_val-48)), 0, 0)
+                self.stage.dragon_right.right_eye = RgbPixel(int((255 / 24) * (counter_val-48)), 0, 0)
+            if counter_val > 72:
+                self.stage.dragon_left.left_eye = RgbPixel(int(255 - ((255 / 24) * (counter_val - 72))), 0, 0)
+                self.stage.dragon_left.right_eye = RgbPixel(int(255 - ((255 / 24) * (counter_val - 72))), 0, 0)
+                self.stage.dragon_right.left_eye = RgbPixel(int(255 - ((255 / 24) * (counter_val - 72))), 0, 0)
+                self.stage.dragon_right.right_eye = RgbPixel(int(255 - ((255 / 24) * (counter_val - 72))), 0, 0)
+
+
         if update_type == UpdateType.BEAT:
             if self.mode == DragonMode.THOMAS_THE_TANK_ENGINE:
                 self.stage.dragon_left.left_eye = RgbPixel(255, 0, 0)

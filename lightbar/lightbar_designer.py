@@ -44,7 +44,12 @@ class RandomColorChangesLightBar:
 class RetrowaveGridState:
     update_frequency: UpdateFrequency = UpdateFrequency.BEAT
     color: RgbPixel = RgbPixel(255, 0, 255)  # Purple
-    pixels: deque[RgbPixel] = deque([RgbPixel(0, 0, 0) for _ in range(96)])
+    pixels: list[RgbPixel] = dataclasses.field(default_factory = lambda: [RgbPixel(0, 0, 0) for _ in range(96)])
+
+@dataclasses.dataclass
+class NootNootState:
+    pulse_counter = 0
+
 
 @dataclasses.dataclass
 class TankEngineState:
@@ -77,7 +82,36 @@ class TankEngineState:
                                         RgbPixel(25, 25, 255),
                                         RgbPixel(25, 25, 255),
                                         RgbPixel(107, 107, 107),
-                                    ] + [RgbPixel(0, 0, 0) for _ in range(96 - 25)])
+                                    ] + [RgbPixel(0, 0, 0) for _ in range(35)] +
+                                    [
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(128, 68, 28),
+                                        RgbPixel(10, 10, 10),
+                                        RgbPixel(25, 25, 255),
+                                        RgbPixel(25, 25, 255),
+                                        RgbPixel(25, 25, 255),
+                                        RgbPixel(107, 107, 107),
+                                    ]
+
+                                    + [RgbPixel(0, 0, 0) for _ in range(36)])
 
 class Mode(enum.Enum):
     DRAW_TOWARDS_RIGHT = 1
@@ -88,6 +122,8 @@ class Mode(enum.Enum):
     RANDOM_LIGHTBAR_CHANGES_COLOR = RandomColorChangesLightBar()
     THOMAS_THE_DANK_ENGINE = 7
     RETROWAVE_GRID = 8
+    OFF = 9
+    NOOT_NOOT = 10
 
 class UpdateType(enum.Enum):
     PULSE = 1
@@ -127,208 +163,128 @@ class LightbarDesigner:
 
         # TODO: Only do the following when a master switch takes place!
         if self.traktor_metadata.current_track_deck_a == "Biggie smalls the tank engine":
+            if self.traktor_metadata.current_track_elapsed_deck_a > 20.8:
+                self.mode = Mode.THOMAS_THE_DANK_ENGINE
+                self.modestate = TankEngineState()
+            else:
+                self.mode = Mode.OFF
+        if self.traktor_metadata.current_track_deck_a == "Noot noot the police":
+            if self.traktor_metadata.current_track_elapsed_deck_a > 1.9:
+                self.mode = Mode.NOOT_NOOT
+                if not isinstance(self.modestate, NootNootState) and update_type == UpdateType.BEAT:
+                    self.modestate = NootNootState()
+            else:
+                self.mode = Mode.OFF
+                self.modestate = None
+        if self.traktor_metadata.current_track_deck_a == "The Girl and the Robot":
+            if self.traktor_metadata.current_track_elapsed_deck_a > 222:
+                self.mode = Mode.OFF
+            else:
+                self.mode = Mode.RETROWAVE_GRID
+                if not isinstance(self.modestate, RetrowaveGridState):
+                    self.modestate = RetrowaveGridState()
+        if self.traktor_metadata.current_track_deck_a == "Make Me Thomas (feat. Jawn Legend)":
             self.mode = Mode.THOMAS_THE_DANK_ENGINE
             self.modestate = TankEngineState()
-        if self.traktor_metadata.current_track_deck_a == "The Girl and the Robot":
-            self.mode = Mode.RETROWAVE_GRID
-            if not isinstance(self.modestate, RetrowaveGridState):
-                self.modestate = RetrowaveGridState()
+
+        if self.mode == Mode.NOOT_NOOT and isinstance(self.modestate, NootNootState):
+            # One noot happens during a half beat.
+            # So we have 12 pulses to use.
+            # Six pulses out, six pulses in.
+            # So 32 pixels/six pulses gives us max five pixels at a time.
+            def nootbar(lightbar: LightBar, direction: Direction.RIGHT):
+                orange_pixel = RgbPixel(237, 112, 20)
+                black_pixel = RgbPixel(0, 0, 0)
+
+                mod_96 = self.modestate.pulse_counter % 96
+
+                if direction == direction.LEFT:
+                    lightbar.pixels.reverse()
+
+                if 0 <= mod_96 <= 4:
+                    lightbar.pixels[mod_96*5 + 0] = orange_pixel
+                    lightbar.pixels[mod_96*5 + 1] = orange_pixel
+                    lightbar.pixels[mod_96*5 + 2] = orange_pixel
+                    lightbar.pixels[mod_96*5 + 3] = orange_pixel
+                    lightbar.pixels[mod_96*5 + 4] = orange_pixel
+                elif 5 <= mod_96 <= 9:
+                    step_size = 9 - mod_96  # 4, 3, 2, 1, 0
+                    lightbar.pixels[step_size*5 + 0] = black_pixel
+                    lightbar.pixels[step_size*5 + 1] = black_pixel
+                    lightbar.pixels[step_size*5 + 2] = black_pixel
+                    lightbar.pixels[step_size*5 + 3] = black_pixel
+                    lightbar.pixels[step_size*5 + 4] = black_pixel
+                elif 20 <= mod_96 <= 25:
+                    mod_96 -= 20
+                    lightbar.pixels[mod_96*5 + 0] = orange_pixel
+                    lightbar.pixels[mod_96*5 + 1] = orange_pixel
+                    lightbar.pixels[mod_96*5 + 2] = orange_pixel
+                    lightbar.pixels[mod_96*5 + 3] = orange_pixel
+                    lightbar.pixels[mod_96*5 + 4] = orange_pixel
+                elif 26 <= mod_96 <= 31:
+                    step_size = 31 - mod_96  # 4, 3, 2, 1, 0
+                    lightbar.pixels[step_size * 5 + 0] = black_pixel
+                    lightbar.pixels[step_size * 5 + 1] = black_pixel
+                    lightbar.pixels[step_size * 5 + 2] = black_pixel
+                    lightbar.pixels[step_size * 5 + 3] = black_pixel
+                    lightbar.pixels[step_size * 5 + 4] = black_pixel
+
+                if direction == direction.LEFT:
+                    lightbar.pixels.reverse()
+
+            nootbar(self.lightbar_left, Direction.LEFT)
+            nootbar(self.lightbar_right, Direction.RIGHT)
+
+            if 36 < (self.modestate.pulse_counter % 96) < 96:
+                def calculate_blue_light(pixel_pos: int, mod_pulse_22: int):
+                    if mod_pulse_22 < 11:
+                        return RgbPixel(0, 0,
+                                                                  (255 // 11) * ((mod_pulse_22 + pixel_pos) % 11))
+                    else:
+                        return RgbPixel(0, 0, 255 - (255 // 11) * (
+                            (mod_pulse_22 + pixel_pos) % 11))
+
+                def calculate_red_light(pixel_pos: int, mod_pulse_22: int):
+                    if mod_pulse_22 < 11:
+                        return RgbPixel((255 // 11) * ((mod_pulse_22 + pixel_pos) % 11), 0, 0)
+                    else:
+                        return RgbPixel(255 - (255 // 11) * ((mod_pulse_22 + pixel_pos) % 11), 0, 0)
+
+                for i in range(0, 32):
+                    self.lightbar_left.pixels[i] = RgbPixel(0, 0, 0)
+                    self.lightbar_right.pixels[i] = RgbPixel(0, 0, 0)
 
 
+                for i in range(0, 16):
+                    self.lightbar_center.pixels[i] = calculate_blue_light(i, self.modestate.pulse_counter % 22)
+
+                for i in range(16, 32):
+                    self.lightbar_center.pixels[i] = calculate_red_light(i, self.modestate.pulse_counter % 22)
+            else:
+                self.lightbar_center.pixels = [RgbPixel(0, 0, 0)] * 32
+
+            if update_type == UpdateType.PULSE:
+                self.modestate.pulse_counter+=1
+
+            return
+
+
+
+
+        if self.mode == Mode.RETROWAVE_GRID:
             # First, shift all the current pixels outwards.
-            if self.internal_pulse_counter % 24 == 0:
-                # On every beat, shift every pixel left/right.
-                left_side = deque(islice(self.modestate.pixels, 0, 48))
-                right_side = deque(islice(self.modestate.pixels, 48, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + right_side
+            pulse_count = self.internal_pulse_counter % 48
 
-            if self.internal_pulse_counter % 24 == 1:
-                left_side = deque(islice(self.modestate.pixels, 0, 46))
-                frozen_middle = deque(islice(self.modestate.pixels, 46, 50))
-                right_side = deque(islice(self.modestate.pixels, 50, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 2:
-                left_side = deque(islice(self.modestate.pixels, 0, 44))
-                frozen_middle = deque(islice(self.modestate.pixels, 44, 52))
-                right_side = deque(islice(self.modestate.pixels, 52, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 3:
-                left_side = deque(islice(self.modestate.pixels, 0, 42))
-                frozen_middle = deque(islice(self.modestate.pixels, 42, 54))
-                right_side = deque(islice(self.modestate.pixels, 54, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 4:
-                left_side = deque(islice(self.modestate.pixels, 0, 40))
-                frozen_middle = deque(islice(self.modestate.pixels, 40, 56))
-                right_side = deque(islice(self.modestate.pixels, 56, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 5:
-                left_side = deque(islice(self.modestate.pixels, 0, 38))
-                frozen_middle = deque(islice(self.modestate.pixels, 38, 58))
-                right_side = deque(islice(self.modestate.pixels, 58, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 6:
-                left_side = deque(islice(self.modestate.pixels, 0, 36))
-                frozen_middle = deque(islice(self.modestate.pixels, 36, 60))
-                right_side = deque(islice(self.modestate.pixels, 60, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-
-            if self.internal_pulse_counter % 24 == 7:
-                left_side = deque(islice(self.modestate.pixels, 0, 34))
-                frozen_middle = deque(islice(self.modestate.pixels, 34, 62))
-                right_side = deque(islice(self.modestate.pixels, 58, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 8:
-                left_side = deque(islice(self.modestate.pixels, 0, 32))
-                frozen_middle = deque(islice(self.modestate.pixels, 32, 64))
-                right_side = deque(islice(self.modestate.pixels, 60, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 9:
-                left_side = deque(islice(self.modestate.pixels, 0, 30))
-                frozen_middle = deque(islice(self.modestate.pixels, 30, 66))
-                right_side = deque(islice(self.modestate.pixels, 62, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 10:
-                left_side = deque(islice(self.modestate.pixels, 0, 28))
-                frozen_middle = deque(islice(self.modestate.pixels, 28, 68))
-                right_side = deque(islice(self.modestate.pixels, 64, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 11:
-                left_side = deque(islice(self.modestate.pixels, 0, 26))
-                frozen_middle = deque(islice(self.modestate.pixels, 26, 70))
-                right_side = deque(islice(self.modestate.pixels, 66, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 12:
-                left_side = deque(islice(self.modestate.pixels, 0, 24))
-                frozen_middle = deque(islice(self.modestate.pixels, 24, 72))
-                right_side = deque(islice(self.modestate.pixels, 68, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 13:
-                left_side = deque(islice(self.modestate.pixels, 0, 22))
-                frozen_middle = deque(islice(self.modestate.pixels, 22, 74))
-                right_side = deque(islice(self.modestate.pixels, 70, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 14:
-                left_side = deque(islice(self.modestate.pixels, 0, 20))
-                frozen_middle = deque(islice(self.modestate.pixels, 20, 76))
-                right_side = deque(islice(self.modestate.pixels, 72, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 15:
-                left_side = deque(islice(self.modestate.pixels, 0, 18))
-                frozen_middle = deque(islice(self.modestate.pixels, 18, 78))
-                right_side = deque(islice(self.modestate.pixels, 74, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 16:
-                left_side = deque(islice(self.modestate.pixels, 0, 16))
-                frozen_middle = deque(islice(self.modestate.pixels, 16, 80))
-                right_side = deque(islice(self.modestate.pixels, 76, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 17:
-                left_side = deque(islice(self.modestate.pixels, 0, 14))
-                frozen_middle = deque(islice(self.modestate.pixels, 14, 82))
-                right_side = deque(islice(self.modestate.pixels, 78, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 18:
-                left_side = deque(islice(self.modestate.pixels, 0, 12))
-                frozen_middle = deque(islice(self.modestate.pixels, 12, 84))
-                right_side = deque(islice(self.modestate.pixels, 80, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 19:
-                left_side = deque(islice(self.modestate.pixels, 0, 10))
-                frozen_middle = deque(islice(self.modestate.pixels, 10, 86))
-                right_side = deque(islice(self.modestate.pixels, 82, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 20:
-                left_side = deque(islice(self.modestate.pixels, 0, 8))
-                frozen_middle = deque(islice(self.modestate.pixels, 8, 88))
-                right_side = deque(islice(self.modestate.pixels, 84, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 21:
-                left_side = deque(islice(self.modestate.pixels, 0, 6))
-                frozen_middle = deque(islice(self.modestate.pixels, 6, 90))
-                right_side = deque(islice(self.modestate.pixels, 86, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 22:
-                left_side = deque(islice(self.modestate.pixels, 0, 4))
-                frozen_middle = deque(islice(self.modestate.pixels, 4, 92))
-                right_side = deque(islice(self.modestate.pixels, 88, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
-            if self.internal_pulse_counter % 24 == 23:
-                left_side = deque(islice(self.modestate.pixels, 0, 2))
-                frozen_middle = deque(islice(self.modestate.pixels, 2, 94))
-                right_side = deque(islice(self.modestate.pixels, 90, 96))
-                left_side.rotate(-1)
-                right_side.rotate(1)
-                self.modestate.pixels = left_side + frozen_middle + right_side
-
+            if pulse_count != 0:
+                if pulse_count % 2 == 0:
+                    pulse_count = pulse_count // 2
+                    pulse_count = pulse_count - 1
+                    left_side = self.modestate.pixels[0:(48-pulse_count)]
+                    right_side = self.modestate.pixels[(48+pulse_count):96]
+                    middle = self.modestate.pixels[(48-pulse_count):(48+pulse_count)]
+                    left_side = left_side[1:] + [RgbPixel(0, 0, 0)]
+                    right_side = [RgbPixel(0, 0, 0)] + right_side[:-1]
+                    self.modestate.pixels = left_side + middle + right_side
 
 
             if self.internal_pulse_counter % 24 == 0:
@@ -339,7 +295,12 @@ class LightbarDesigner:
             self.lightbar_left.pixels = list(islice(self.modestate.pixels, 0, 32))
             self.lightbar_center.pixels = list(islice(self.modestate.pixels, 32, 64))
             self.lightbar_right.pixels = list(islice(self.modestate.pixels, 64, 96))
+            return
 
+        if self.mode == Mode.OFF:
+            self.lightbar_left.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
+            self.lightbar_center.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
+            self.lightbar_right.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
 
         # BEAT BASED EFFECTS
         if update_type == UpdateType.BEAT and self.mode in [Mode.DRAW_TOWARDS_RIGHT, Mode.RAINBOW_BLINK, Mode.BLINK, Mode.RANDOM_LIGHTBAR_CHANGES_COLOR, Mode.THOMAS_THE_DANK_ENGINE]:

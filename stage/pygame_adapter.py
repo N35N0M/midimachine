@@ -52,15 +52,40 @@ def dragon_to_pygame(dragon: Dragon, x_pos: int, y_pos: int, surface) -> None:
 
     pygame.draw.rect(
         surface=surface,
-        color=(dragon.left_eye.red, dragon.left_eye.green, dragon.left_eye.blue),
-        rect=pygame.Rect(x_pos+25, y_pos+50, 20, 20
+        color=(dragon.left_eye.red, 0, 0),
+        rect=pygame.Rect(x_pos+5, y_pos+50, 20, 20
                          )
     )
+    pygame.draw.rect(
+        surface=surface,
+        color=(0, dragon.left_eye.green, 0),
+        rect=pygame.Rect(x_pos+25, y_pos+50, 20, 20
+                            )
+    )
+    pygame.draw.rect(
+        surface=surface,
+        color=(0, 0, dragon.left_eye.blue),
+        rect=pygame.Rect(x_pos+15, y_pos+30, 20, 20
+                            )
+    )
+
 
     pygame.draw.rect(
         surface=surface,
-        color=(dragon.right_eye.red, dragon.right_eye.green, dragon.right_eye.blue),
+        color=(dragon.right_eye.red, 0, 0),
         rect=pygame.Rect(x_pos+55, y_pos+50, 20, 20
+                         )
+    )
+    pygame.draw.rect(
+        surface=surface,
+        color=(0, dragon.right_eye.green, 0),
+        rect=pygame.Rect(x_pos+75, y_pos+50, 20, 20
+                         )
+    )
+    pygame.draw.rect(
+        surface=surface,
+        color=(0, 0, dragon.right_eye.blue),
+        rect=pygame.Rect(x_pos+65, y_pos+30, 20, 20
                          )
     )
 
