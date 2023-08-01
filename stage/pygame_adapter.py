@@ -117,11 +117,11 @@ def map_stage_to_pygame(stage: Stage_2023, surface) -> None:
     dragon_to_pygame(stage.dragon_right, 750, 5, surface)
 
     font = pygame.font.SysFont("arial", 24)
-    img = font.render(f"Deck A: {stage.traktor_metadata.current_track_deck_a}", True, (255, 255, 255))
+    img = font.render(f"Track: {stage.traktor_metadata.current_track_deck_a if stage.traktor_metadata.master_deck == 'A' else stage.traktor_metadata.current_track_deck_b}", True, (255, 255, 255))
     surface.blit(img, (50, 250))
 
     font = pygame.font.SysFont("arial", 24)
-    img = font.render(f"{stage.traktor_metadata.current_track_elapsed_deck_a}", True, (255, 255, 255))
+    img = font.render(f"{stage.traktor_metadata.current_track_elapsed_deck_a if stage.traktor_metadata.master_deck == 'A' else stage.traktor_metadata.current_track_elapsed_deck_b}", True, (255, 255, 255))
     surface.blit(img, (550, 250))
 
     pygame.display.flip()

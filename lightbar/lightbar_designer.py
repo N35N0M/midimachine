@@ -162,28 +162,30 @@ class LightbarDesigner:
         # PREPROGRAMMED SONGS
 
         # TODO: Only do the following when a master switch takes place!
-        if self.traktor_metadata.current_track_deck_a == "Biggie smalls the tank engine":
-            if self.traktor_metadata.current_track_elapsed_deck_a > 20.8:
+        current_track = self.traktor_metadata.current_track_deck_a if self.traktor_metadata.master_deck == "A" else self.traktor_metadata.current_track_deck_b
+        current_track_elapsed = self.traktor_metadata.current_track_elapsed_deck_a if self.traktor_metadata.master_deck == "A" else self.traktor_metadata.current_track_elapsed_deck_b
+        if current_track == "Biggie smalls the tank engine":
+            if current_track_elapsed > 20.8:
                 self.mode = Mode.THOMAS_THE_DANK_ENGINE
                 self.modestate = TankEngineState()
             else:
                 self.mode = Mode.OFF
-        if self.traktor_metadata.current_track_deck_a == "Noot noot the police":
-            if self.traktor_metadata.current_track_elapsed_deck_a > 1.9:
+        if current_track == "Noot noot the police":
+            if current_track_elapsed > 1.9:
                 self.mode = Mode.NOOT_NOOT
                 if not isinstance(self.modestate, NootNootState) and update_type == UpdateType.BEAT:
                     self.modestate = NootNootState()
             else:
                 self.mode = Mode.OFF
                 self.modestate = None
-        if self.traktor_metadata.current_track_deck_a == "The Girl and the Robot":
-            if self.traktor_metadata.current_track_elapsed_deck_a > 222:
+        if current_track == "The Girl and the Robot":
+            if current_track_elapsed > 222:
                 self.mode = Mode.OFF
             else:
                 self.mode = Mode.RETROWAVE_GRID
                 if not isinstance(self.modestate, RetrowaveGridState):
                     self.modestate = RetrowaveGridState()
-        if self.traktor_metadata.current_track_deck_a == "Make Me Thomas (feat. Jawn Legend)":
+        if current_track == "Make Me Thomas (feat. Jawn Legend)":
             self.mode = Mode.THOMAS_THE_DANK_ENGINE
             self.modestate = TankEngineState()
 
@@ -304,7 +306,6 @@ class LightbarDesigner:
 
         # BEAT BASED EFFECTS
         if update_type == UpdateType.BEAT and self.mode in [Mode.DRAW_TOWARDS_RIGHT, Mode.RAINBOW_BLINK, Mode.BLINK, Mode.RANDOM_LIGHTBAR_CHANGES_COLOR, Mode.THOMAS_THE_DANK_ENGINE]:
-            print(f"Beat render!")
             if self.mode == Mode.DRAW_TOWARDS_RIGHT:
                 lightbar_pixel_mod = self.internal_beat_counter % 96
                 if lightbar_pixel_mod < 32:

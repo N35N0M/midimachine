@@ -55,30 +55,32 @@ class DragonDesigner:
         thr.start()
 
     def render(self, update_type):
-        if self.stage.traktor_metadata.current_track_deck_a == "Biggie smalls the tank engine":
+        current_track = self.stage.traktor_metadata.current_track_deck_a if self.stage.traktor_metadata.master_deck == 'A' else self.stage.traktor_metadata.current_track_deck_b
+        current_track_elapsed = self.stage.traktor_metadata.current_track_elapsed_deck_a if self.stage.traktor_metadata.master_deck == 'A' else self.stage.traktor_metadata.current_track_elapsed_deck_b
+        if current_track == "Biggie smalls the tank engine":
             self.mode = DragonMode.THOMAS_THE_TANK_ENGINE
             if self.modestate is None:
                 self.modestate = ThomasState()
 
-        if self.stage.traktor_metadata.current_track_deck_a == "The Girl and the Robot":
+        if current_track == "The Girl and the Robot":
             # Eye cues
-            if (16 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 31) or \
-                    (80 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 95) or \
-                    (144 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 158) or \
-                    (159 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 173):
+            if (16 < current_track_elapsed < 31) or \
+                    (80 < current_track_elapsed < 95) or \
+                    (144 < current_track_elapsed < 158) or \
+                    (159 < current_track_elapsed < 173):
                 self.mode = DragonMode.PULSING_EYES
-            elif (48 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 78) or \
-                    (111 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 126) or \
-                    (134 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 159) or \
-                    (198 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 236) or \
-                    (0 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 16):
+            elif (48 < current_track_elapsed < 78) or \
+                    (111 < current_track_elapsed < 126) or \
+                    (134 < current_track_elapsed < 159) or \
+                    (198 < current_track_elapsed < 236) or \
+                    (0 < current_track_elapsed < 16):
                 self.mode = DragonMode.CRAZY_EYES
             else:
                 self.mode = DragonMode.EYES_OFF
 
             # Smoke cues
-            if (21 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 31) or \
-                    (127 < self.stage.traktor_metadata.current_track_elapsed_deck_a < 134):
+            if (21 < current_track_elapsed < 31) or \
+                    (127 < current_track_elapsed < 134):
                 self.stage.dragon_left.smoke_machine_on = True
                 self.stage.dragon_right.smoke_machine_on = True
             else:

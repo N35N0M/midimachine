@@ -36,6 +36,15 @@ def deckLoaded(deck):
    else:
       return jsonify(success=True)
 
+@app.route('/updateMasterClock', methods=['POST', 'GET'])
+def updateMasterClock():
+    if request.method == 'POST':
+        traktor_metadata.master_deck = json.loads(request.data)["deck"]
+        print(json.loads(request.data))
+        return jsonify(success=True)
+    else:
+        return jsonify(success=True)
+
 @app.route('/success/<name>')
 def success(name):
    return 'welcome %s' % name

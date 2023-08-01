@@ -40,10 +40,10 @@ class MidiInputHandler(object):
                 self.beat_number += 1
                 for callback in self.on_beat_callbacks:
                     callback()
-                print("Beat number: {}".format(self.beat_number))
-                print("Estimated BPM: {}".format(self.estimated_bpm))
-                print("Pulse counter: {}".format(self.pulse_counter))
-                print("Delta time: {}".format(deltatime))
+                #print("Beat number: {}".format(self.beat_number))
+                #print("Estimated BPM: {}".format(self.estimated_bpm))
+                #print("Pulse counter: {}".format(self.pulse_counter))
+                #print("Delta time: {}".format(deltatime))
         elif message == [250]:
             print("MIDI clock enabled!")
             self.pulse_counter = 0

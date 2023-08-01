@@ -186,6 +186,23 @@ Module
   readonly property string    pathPrefix:  "app.traktor.decks." + (deckIdx) + "."
   AppProperty { id: propTitle;         path: pathPrefix + "content.title"; onValueChanged: helloworldkris.start() }
   AppProperty { id: propElapsedTime;   path: pathPrefix + "track.player.elapsed_time" }
+  AppProperty { id: propMasterDeckId;  path: "app.traktor.masterclock.source_id";  onValueChanged: updateMasterClock() }
+  AppProperty { id: propMasterBpm;     path: "app.traktor.masterclock.tempo";      onValueChanged: masterBpmChangedTimer.restart() }
+
+  Timer {
+    id: masterBpmChangedTimer
+    interval: 250
+
+    onTriggered: updateMasterClock()
+  }
+
+  function updateMasterClock() {
+    ApiClient.send("updateMasterClock", {
+      deck: (propMasterDeckId.value == -1) ? null : String.fromCharCode(65 + propMasterDeckId.value),
+      bpm: propMasterBpm.value,
+    })
+  }
+
   Timer {
     id: helloworldkris
     running: true
