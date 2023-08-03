@@ -21,8 +21,9 @@ class RandomUpdateAmountOfLightbars:
 @dataclasses.dataclass
 class OrganizedUpdateOfLightbars:
     lightbar_pairings: typing.List[typing.List[int]] = dataclasses.field(default_factory=lambda: [[0],[1],[2]])
-    groups_must_have_same_color: bool = True
-
+    color_pallette: typing.Optional[typing.Dict[int, typing.List[RgbPixel]]] = None
+    update_frequency: UpdateFrequency = UpdateFrequency.BEAT
+    counter = 0
 
 ColorChangeLightBar = typing.Union[RandomUpdateAmountOfLightbars, OrganizedUpdateOfLightbars]
 """
@@ -211,13 +212,22 @@ class TankEngineState:
 
                                     + [RgbPixel(0, 0, 0) for _ in range(36)])
 
+@dataclasses.dataclass
+class BeatSquareBounceState:
+    color: RgbPixel = RgbPixel(255, 0, 0)
+    width: typing.Final[int] = 4
+    pulse_velocity: int = 4
+    direction: Direction = Direction.RIGHT
+    pixels: deque[RgbPixel] = deque([RgbPixel(0, 0, 0) for _ in range(64)])
+    beat_synced = False
+
 class Mode(enum.Enum):
     DRAW_TOWARDS_RIGHT = 1
     RAINBOW_BLINK = 2
     BLINK = 3
     BEAT_SQUARE = 4
     BEAT_SQUARE_BOUNCING = 5
-    RANDOM_LIGHTBAR_CHANGES_COLOR = RandomColorChangesLightBar()
+    RANDOM_LIGHTBAR_CHANGES_COLOR = 6
     THOMAS_THE_DANK_ENGINE = 7
     RETROWAVE_GRID = 8
     OFF = 9
@@ -239,8 +249,6 @@ class LightbarDesigner:
         self.current_color = generate_random_color()
         self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
         self.modestate:  typing.Union[TankEngineState, RetrowaveGridState, None] = None
-        self.direction = Direction.RIGHT
-        self.pulse_effect_started = False
         self.internal_pulse_counter = 0
         self.internal_beat_counter = 0
 
@@ -259,17 +267,31 @@ class LightbarDesigner:
         self.render(UpdateType.BEAT)
 
     def render(self, update_type: UpdateType):
-        # PREPROGRAMMED SONGS
-
-        # TODO: Only do the following when a master switch takes place!
         current_track = self.traktor_metadata.current_track_deck_a if self.traktor_metadata.master_deck == "A" else self.traktor_metadata.current_track_deck_b
         current_track_elapsed = self.traktor_metadata.current_track_elapsed_deck_a if self.traktor_metadata.master_deck == "A" else self.traktor_metadata.current_track_elapsed_deck_b
+
+        if current_track == "We Don't Need Another Hero (Thunderdome)":
+            self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
+            if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                self.modestate = OrganizedUpdateOfLightbars()
+                self.modestate.color_pallette = {
+                    0: [RgbPixel(255, 0, 0), RgbPixel(150, 0, 0)],
+                    1: [RgbPixel(0, 255, 0), RgbPixel(0, 150, 0)],
+                    2: [RgbPixel(255, 0, 0), RgbPixel(150, 0, 0)],
+                }
+                self.modestate.lightbar_pairings = [[0, 2], [1]]
+        if current_track == "Lost Woods":
+            self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
+            if not isinstance(self.modestate, RandomColorChangesLightBar):
+                self.modestate = RandomColorChangesLightBar()
+
         if current_track == "Biggie smalls the tank engine":
             if current_track_elapsed > 20.8:
                 self.mode = Mode.THOMAS_THE_DANK_ENGINE
                 self.modestate = TankEngineState()
             else:
                 self.mode = Mode.OFF
+                self.modestate = None
         if current_track == "Noot noot the police":
             if current_track_elapsed > 1.9:
                 self.mode = Mode.NOOT_NOOT
@@ -281,6 +303,7 @@ class LightbarDesigner:
         if current_track == "The Girl and the Robot":
             if current_track_elapsed > 222:
                 self.mode = Mode.OFF
+                self.modestate = None
             else:
                 self.mode = Mode.RETROWAVE_GRID
                 if not isinstance(self.modestate, RetrowaveGridState):
@@ -443,9 +466,6 @@ class LightbarDesigner:
 
             return
 
-
-
-
         if self.mode == Mode.RETROWAVE_GRID:
             # First, shift all the current pixels outwards.
             pulse_count = self.internal_pulse_counter % 48
@@ -478,75 +498,72 @@ class LightbarDesigner:
             self.lightbar_right.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
 
         # BEAT BASED EFFECTS
-        if update_type == UpdateType.BEAT and self.mode in [Mode.DRAW_TOWARDS_RIGHT, Mode.RAINBOW_BLINK, Mode.BLINK, Mode.RANDOM_LIGHTBAR_CHANGES_COLOR, Mode.THOMAS_THE_DANK_ENGINE]:
-            if self.mode == Mode.DRAW_TOWARDS_RIGHT:
-                lightbar_pixel_mod = self.internal_beat_counter % 96
-                if lightbar_pixel_mod < 32:
-                    if lightbar_pixel_mod == 0:
-                        self.current_color = generate_random_color()
-                    self.lightbar_left.set_pixel(lightbar_pixel_mod, self.current_color)
-                elif lightbar_pixel_mod < 64:
-                    self.lightbar_center.set_pixel(lightbar_pixel_mod - 32, self.current_color)
-                else:
-                    self.lightbar_right.set_pixel(lightbar_pixel_mod - 64, self.current_color)
-            elif self.mode == Mode.THOMAS_THE_DANK_ENGINE:
-                self.lightbar_left.pixels = list(islice(self.modestate.pixels, 0, 32))
-                self.lightbar_center.pixels = list(islice(self.modestate.pixels, 32, 64))
-                self.lightbar_right.pixels = list(islice(self.modestate.pixels, 64, 96))
-                self.modestate.pixels.rotate(1)
-
-                return
-            elif self.mode == Mode.RAINBOW_BLINK:
-                for i in range(32):
-                    self.lightbar_left.set_pixel(i, self.current_color)
-                    self.lightbar_center.set_pixel(i, self.current_color)
-                    self.lightbar_right.set_pixel(i, self.current_color)
+        if self.mode == Mode.DRAW_TOWARDS_RIGHT:
+            lightbar_pixel_mod = self.internal_beat_counter % 96
+            if lightbar_pixel_mod < 32:
+                if lightbar_pixel_mod == 0:
                     self.current_color = generate_random_color()
-            elif self.mode == Mode.BLINK:
+                self.lightbar_left.set_pixel(lightbar_pixel_mod, self.current_color)
+            elif lightbar_pixel_mod < 64:
+                self.lightbar_center.set_pixel(lightbar_pixel_mod - 32, self.current_color)
+            else:
+                self.lightbar_right.set_pixel(lightbar_pixel_mod - 64, self.current_color)
+        if self.mode == Mode.THOMAS_THE_DANK_ENGINE and update_type == UpdateType.BEAT:
+            self.lightbar_left.pixels = list(islice(self.modestate.pixels, 0, 32))
+            self.lightbar_center.pixels = list(islice(self.modestate.pixels, 32, 64))
+            self.lightbar_right.pixels = list(islice(self.modestate.pixels, 64, 96))
+            self.modestate.pixels.rotate(1)
+
+            return
+        if self.mode == Mode.RAINBOW_BLINK:
+            for i in range(32):
+                self.lightbar_left.set_pixel(i, self.current_color)
+                self.lightbar_center.set_pixel(i, self.current_color)
+                self.lightbar_right.set_pixel(i, self.current_color)
                 self.current_color = generate_random_color()
-                for i in range(32):
-                    self.lightbar_left.set_pixel(i, self.current_color)
-                    self.lightbar_center.set_pixel(i, self.current_color)
-                    self.lightbar_right.set_pixel(i, self.current_color)
-            elif self.mode == Mode.RANDOM_LIGHTBAR_CHANGES_COLOR:
-                # Handle beat frequency first.
-                if self.mode.value.update_frequency == UpdateFrequency.BEAT:
-                    pass
-                elif UpdateFrequency.EVERY_OTHER_BEAT:
-                    if self.internal_beat_counter % 2 == 1:
-                        return
+        if self.mode == Mode.BLINK:
+            self.current_color = generate_random_color()
+            for i in range(32):
+                self.lightbar_left.set_pixel(i, self.current_color)
+                self.lightbar_center.set_pixel(i, self.current_color)
+                self.lightbar_right.set_pixel(i, self.current_color)
 
-                # Determine which bars to update second based on the update type.
-                if isinstance(self.mode.value.bar_update_type, RandomUpdateAmountOfLightbars):
-                    bars_to_change = random.sample(range(3), self.mode.value.bar_update_type.amount_of_lightbars)
-                    # Then perform update on those bars.
-                    for bar in bars_to_change:
-                        self.mode.value.lightbar_color[bar] = generate_random_color()
-                        for pixel in range(len([self.lightbar_left, self.lightbar_center, self.lightbar_right][bar].pixels)):
-                            [self.lightbar_left, self.lightbar_center, self.lightbar_right][bar].pixels[pixel] = self.mode.value.lightbar_color[bar]
-                elif isinstance(self.mode.value.bar_update_type, OrganizedUpdateOfLightbars):
-                    bars_to_change = self.mode.value.bar_update_type.lightbar_pairings[
-                        self.mode.value.counter % len(self.mode.value.bar_update_type.lightbar_pairings)]
-                    self.mode.value.counter += 1
-                    # Then perform update on those bars.
-                    if self.mode.value.bar_update_type.groups_must_have_same_color:
-                        color = generate_random_color()
-                        for bar in bars_to_change:
-                            self.mode.value.lightbar_color[bar] = color
-                            for pixel in range(
-                                    len([self.lightbar_left, self.lightbar_center, self.lightbar_right][bar].pixels)):
-                                [self.lightbar_left, self.lightbar_center, self.lightbar_right][bar].pixels[pixel] = self.mode.value.lightbar_color[bar]
-                    else:
-                        for bar in bars_to_change:
-                            self.mode.value.lightbar_color[bar] = generate_random_color()
-                            for pixel in range(
-                                    len([self.lightbar_left, self.lightbar_center, self.lightbar_right][bar].pixels)):
-                                [self.lightbar_left, self.lightbar_center, self.lightbar_right][bar].pixels[pixel] = self.mode.value.lightbar_color[bar]
+        if self.mode == Mode.RANDOM_LIGHTBAR_CHANGES_COLOR and isinstance(self.modestate, (RandomUpdateAmountOfLightbars, OrganizedUpdateOfLightbars)):
+            # Handle beat frequency first.
+            if self.modestate.update_frequency == UpdateFrequency.BEAT and update_type == UpdateType.BEAT:
+                pass
+            else:
+                return
 
-        # PULSE BASED EFFECTS
+            # Determine which bars to update second based on the update type.
+            if isinstance(self.modestate, RandomUpdateAmountOfLightbars):
+                bars_to_change = random.sample(range(3), self.modestate.amount_of_lightbars)
+                # Then perform update on those bars.
+                for bar in bars_to_change:
+                    for pixel in range(len([self.lightbar_left, self.lightbar_center, self.lightbar_right][bar].pixels)):
+                        [self.lightbar_left, self.lightbar_center, self.lightbar_right][bar].pixels[pixel] = generate_random_color()
+            if isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                bars_to_change = self.modestate.lightbar_pairings[
+                    self.modestate.counter % len(self.modestate.lightbar_pairings)]
+                self.modestate.counter += 1
+                # Then perform update on those bars.
+                print(bars_to_change)
+                previous_color = [self.lightbar_left, self.lightbar_center, self.lightbar_right][bars_to_change[0]].pixels[0]
+
+                if self.modestate.color_pallette is not None and bars_to_change[0] in self.modestate.color_pallette:
+                    color_to_set = previous_color
+                    while color_to_set == previous_color:
+                        color_to_set = random.sample(self.modestate.color_pallette[bars_to_change[0]], 1)[0]
+                else:
+                    color_to_set = generate_random_color()
+                for bar in bars_to_change:
+                    for pixel in range(
+                            len([self.lightbar_left, self.lightbar_center, self.lightbar_right][bar].pixels)):
+                        [self.lightbar_left, self.lightbar_center, self.lightbar_right][bar].pixels[pixel] = color_to_set
+
         if self.mode == Mode.BEAT_SQUARE:
             if not self.pulse_effect_started:
-                    self.pulse_counter = 0
+                    self.internal_pulse_counter = 0
                     self.direction = Direction.RIGHT
                     self.pulse_effect_started = True
 
@@ -555,74 +572,56 @@ class LightbarDesigner:
                 updates_per_beat = 48
                 step = amount_of_pixels / updates_per_beat
                 pixel_positions = [
-                    int(self.pulse_counter * step) % 96,
-                    (int((self.pulse_counter * step) + 1) % 96),
-                    (int((self.pulse_counter * step) + 2)) % 96,
-                    (int((self.pulse_counter * step) + 3)) % 96,
-                    (int((self.pulse_counter * step) + 4)) % 96,
+                    int(self.internal_pulse_counter * step) % 96,
+                    (int((self.internal_pulse_counter * step) + 1) % 96),
+                    (int((self.internal_pulse_counter * step) + 2)) % 96,
+                    (int((self.internal_pulse_counter * step) + 3)) % 96,
+                    (int((self.internal_pulse_counter * step) + 4)) % 96,
                 ]
 
                 # Ensure we do not overflow
                 pixel_positions = list(filter(lambda x: x < 96, pixel_positions))
 
-                for lightbar in self.lightbar_order:
+                for lightbar in [self.lightbar_left, self.lightbar_center, self.lightbar_right]:
                     lightbar.clear_pixels()
 
                 for pixel_position in pixel_positions:
                     if pixel_position < 32:
-                        self.lightbar_order[0].set_pixel(pixel_position, self.current_color)
+                        self.lightbar_left.set_pixel(pixel_position, self.current_color)
                     elif pixel_position < 64:
-                        self.lightbar_order[1].set_pixel(pixel_position - 32, self.current_color)
+                        self.lightbar_center.set_pixel(pixel_position - 32, self.current_color)
                     else:
-                        self.lightbar_order[2].set_pixel(pixel_position - 64, self.current_color)
+                        self.lightbar_right.set_pixel(pixel_position - 64, self.current_color)
 
-                self.lightbar_order[0].send_to_controller(ctrl)
-                self.lightbar_order[1].send_to_controller(ctrl)
-                self.lightbar_order[2].send_to_controller(ctrl)
-        elif self.mode == Mode.BEAT_SQUARE_BOUNCING:
-            if self.pulse_effect_started == False:
-                if self.pulse_counter % 24 == 0:
-                    self.pulse_counter = 0
-                    self.pulse_effect_started = True
-                    self.direction = Direction.RIGHT
-            else:
-                if self.pulse_counter % 48 == 0:
-                    self.direction = Direction.LEFT if self.direction == Direction.RIGHT else Direction.RIGHT
-                    self.pulse_counter = 0
+        if self.mode == Mode.BEAT_SQUARE_BOUNCING:
+            if update_type == UpdateType.BEAT:
+                self.modestate.beat_synced = True
 
-            if self.pulse_effect_started:
-                amount_of_pixels = 96
-                updates_per_beat = 48
-                step = amount_of_pixels / updates_per_beat
+            if self.modestate.beat_synced:
 
-                if self.direction == Direction.RIGHT:
-                    pixel_positions = [
-                        int(self.pulse_counter * step),
-                        (int((self.pulse_counter * step) + 1)),
-                        (int((self.pulse_counter * step) + 2)),
-                        (int((self.pulse_counter * step) + 3)),
-                        (int((self.pulse_counter * step) + 4)),
-                    ]
+                if self.modestate.direction == Direction.RIGHT and self.internal_pulse_counter % 96 == 0:
+                    self.modestate.direction = Direction.LEFT
+                    self.modestate.pixels = deque(
+                        [self.modestate.color for _ in range(self.modestate.width)] + [RgbPixel(0, 0, 0) for _ in
+                                                                                   range(96 - self.modestate.width)])
+
+                elif self.modestate.direction == Direction.LEFT and self.internal_pulse_counter % 96 == 0:
+                    self.modestate.direction = Direction.RIGHT
+                    self.modestate.pixels = deque(
+                        [RgbPixel(0, 0, 0) for _ in range(96 - self.modestate.width)] + [self.modestate.color for _ in range(self.modestate.width)])
+
+
+                # Move according to velocity.
+                if self.modestate.direction == Direction.RIGHT:
+                    self.modestate.pixels.rotate(1)
                 else:
-                    pixel_positions = [
-                        96 - (int((self.pulse_counter * step) + 4)),
-                        96 - (int((self.pulse_counter * step) + 3)),
-                        96 - (int((self.pulse_counter * step) + 2)),
-                        96 - (int((self.pulse_counter * step) + 1)),
-                        96 - (int((self.pulse_counter * step) + 0)),
-                    ]
+                    self.modestate.pixels.rotate(-1)
 
-                # Ensure we do not overflow or underflow
-                pixel_positions = list(filter(lambda x: x < 96, pixel_positions))
-                pixel_positions = list(filter(lambda x: x >= 0, pixel_positions))
+                # Render
+                self.lightbar_left.pixels = list(islice(self.modestate.pixels, 0, 32))
+                self.lightbar_center.pixels = list(islice(self.modestate.pixels, 32, 64))
+                self.lightbar_right.pixels = list(islice(self.modestate.pixels, 64, 96))
 
-                for lightbar in self.lightbar_order:
-                    lightbar.clear_pixels()
 
-                for pixel_position in pixel_positions:
-                    if pixel_position < 32:
-                        self.lightbar_order[0].set_pixel(pixel_position, self.current_color)
-                    elif pixel_position < 64:
-                        self.lightbar_order[1].set_pixel(pixel_position - 32, self.current_color)
-                    else:
-                        self.lightbar_order[2].set_pixel(pixel_position - 64, self.current_color)
+
+
