@@ -5,11 +5,10 @@ import random
 import typing
 
 from lightbar.lightbar import LightBar
-from common_types import UpdateFrequency, RgbPixel, from_color_to_rgb_pixel
+from common_types import UpdateFrequency, RgbPixel
 from midi.midi_input_handler import MidiInputHandler
 from traktor_metadata import TraktorMetadata
 from utils import generate_random_color
-from colour import Color
 from collections import deque
 from itertools import islice
 
@@ -86,6 +85,41 @@ sky = [
     RgbPixel(176, 224, 230),
 ]
 
+purple_sky = [
+    RgbPixel(148,0,211),
+    RgbPixel(148, 0, 211),
+    RgbPixel(148, 0, 211),
+    RgbPixel(148, 0, 211),
+    RgbPixel(148, 0, 211),
+    RgbPixel(148, 0, 211),
+    RgbPixel(148, 0, 211),
+    RgbPixel(148, 0, 211),
+    RgbPixel(186, 85, 211),
+    RgbPixel(186, 85, 211),
+    RgbPixel(186, 85, 211),
+    RgbPixel(186, 85, 211),
+    RgbPixel(186, 85, 211),
+    RgbPixel(186, 85, 211),
+    RgbPixel(186, 85, 211),
+    RgbPixel(186, 85, 211),
+    RgbPixel(255,0,255),
+    RgbPixel(255, 0, 255),
+    RgbPixel(255, 0, 255),
+    RgbPixel(255, 0, 255),
+    RgbPixel(255, 0, 255),
+    RgbPixel(255, 0, 255),
+    RgbPixel(255, 0, 255),
+    RgbPixel(255, 0, 255),
+    RgbPixel(238,130,238),
+    RgbPixel(238, 130, 238),
+    RgbPixel(238, 130, 238),
+    RgbPixel(238, 130, 238),
+    RgbPixel(238, 130, 238),
+    RgbPixel(238, 130, 238),
+    RgbPixel(238, 130, 238),
+    RgbPixel(238, 130, 238),
+]
+
 half_sun = [
     RgbPixel(255,140,0),
     RgbPixel(255,140,0),
@@ -110,8 +144,9 @@ class PixelSunstate:
     fade_in = True
     fade_in_counter = 0
     beat_shift = False
-    beat_shift_counter = 8
+    beat_shift_counter = 0  # The counter == offset from centered position. max [-8, +8]
     beat_shift_direction = Direction.RIGHT
+    purple_sky = False
     pixels: deque[RgbPixel] = deque(sky + half_sun + list(reversed(copy.deepcopy(half_sun))) + list(reversed(copy.deepcopy(sky))))
 
 @dataclasses.dataclass
@@ -262,6 +297,11 @@ class LightbarDesigner:
                 self.lightbar_center.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
                 self.lightbar_right.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
 
+            if 146.4 < current_track_elapsed < 249.5:
+                self.modestate.purple_sky = True
+            else:
+                self.modestate.purple_sky = False
+
             if 0 < current_track_elapsed < 41.5:
                 self.modestate.fade_in = True
             elif 41.5 < current_track_elapsed:
@@ -279,6 +319,13 @@ class LightbarDesigner:
             """
 
             if update_type == UpdateType.BEAT:
+                if self.modestate.purple_sky:
+                    self.modestate.pixels = deque(purple_sky + half_sun + list(reversed(copy.deepcopy(half_sun))) + list(reversed(copy.deepcopy(purple_sky))))
+                    self.modestate.pixels.rotate(self.modestate.beat_shift_counter)
+                else:
+                    self.modestate.pixels = deque(sky + half_sun + list(reversed(copy.deepcopy(half_sun))) + list(reversed(copy.deepcopy(sky))))
+                    self.modestate.pixels.rotate(self.modestate.beat_shift_counter)
+
                 if self.modestate.fade_in:
                     lightbar_left_pixels = copy.deepcopy(list(islice(self.modestate.pixels, 0, 32)))
                     lightbar_center_pixels = copy.deepcopy(list(islice(self.modestate.pixels, 32, 64)))
@@ -301,14 +348,11 @@ class LightbarDesigner:
 
                 if self.modestate.beat_shift:
                     if self.modestate.beat_shift_direction == Direction.RIGHT:
-                        self.modestate.pixels.rotate(1)
-                    else:
-                        self.modestate.pixels.rotate(-1)
-                    self.modestate.beat_shift_counter += 1
+                        self.modestate.beat_shift_counter += 1
+                    elif self.modestate.beat_shift_direction == Direction.LEFT:
+                        self.modestate.beat_shift_counter -= 1
 
-                    print(self.modestate.beat_shift_counter)
-                    print(self.modestate.beat_shift_counter % 16 == 0)
-                    if self.modestate.beat_shift_counter % 16 == 0:
+                    if self.modestate.beat_shift_counter % 8 == 0 and self.modestate.beat_shift_counter != 0:
                         if self.modestate.beat_shift_direction == Direction.RIGHT:
                             self.modestate.beat_shift_direction = Direction.LEFT
                         elif self.modestate.beat_shift_direction == Direction.LEFT:

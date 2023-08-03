@@ -63,7 +63,17 @@ class DragonDesigner:
                 self.modestate = ThomasState()
 
         if current_track == "Amberina Sun":
-            self.mode = DragonMode.ALL_OFF
+            if 249.5 > current_track_elapsed > 209:
+                self.mode = DragonMode.PULSING_EYES
+            else:
+                self.mode = DragonMode.ALL_OFF
+
+            if 230 < current_track_elapsed < 234:
+                self.stage.dragon_left.smoke_machine_on = True
+                self.stage.dragon_right.smoke_machine_on = True
+            else:
+                self.stage.dragon_left.smoke_machine_on = False
+                self.stage.dragon_right.smoke_machine_on = False
 
         if current_track == "The Girl and the Robot":
             # Eye cues
