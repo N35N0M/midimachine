@@ -269,17 +269,45 @@ class LightbarDesigner:
     def render(self, update_type: UpdateType):
         current_track = self.traktor_metadata.current_track_deck_a if self.traktor_metadata.master_deck == "A" else self.traktor_metadata.current_track_deck_b
         current_track_elapsed = self.traktor_metadata.current_track_elapsed_deck_a if self.traktor_metadata.master_deck == "A" else self.traktor_metadata.current_track_elapsed_deck_b
+        if current_track == "Junkyard Dunebuggy":
+            if (0 < current_track_elapsed < 95.8) or (172.8 < current_track_elapsed < 182.2):
+                self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
+                if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                    self.modestate = OrganizedUpdateOfLightbars()
+                self.modestate.color_pallette = {
+                    0: [RgbPixel(255,140,0), RgbPixel(255,165,0), RgbPixel(255,215,0)],
+                    1: [RgbPixel(255,140,0), RgbPixel(255,165,0), RgbPixel(255,215,0)],
+                    2: [RgbPixel(255,140,0), RgbPixel(255,165,0), RgbPixel(255,215,0)],
+                }
+                self.modestate.lightbar_pairings = [[0, 2], [1]]
+            elif (95.8 < current_track_elapsed < 172.8):
+                self.mode = Mode.PIXEL_SUN
+                if not isinstance(self.modestate, PixelSunstate):
+                    self.modestate = PixelSunstate()
+                self.modestate.purple_sky = False
+                self.modestate.beat_shift = True
+                self.modestate.fade_in = False
+            elif (182.2 < current_track_elapsed < 220):
+                self.mode = Mode.PIXEL_SUN
+                if not isinstance(self.modestate, PixelSunstate):
+                    self.modestate = PixelSunstate()
+                self.modestate.purple_sky = True
+                self.modestate.beat_shift = True
+                self.modestate.fade_in = False
+            else:
+                self.mode = Mode.OFF
+                self.modestate = None
 
         if current_track == "We Don't Need Another Hero (Thunderdome)":
             self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
             if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
                 self.modestate = OrganizedUpdateOfLightbars()
-                self.modestate.color_pallette = {
-                    0: [RgbPixel(255, 0, 0), RgbPixel(150, 0, 0)],
-                    1: [RgbPixel(0, 255, 0), RgbPixel(0, 150, 0)],
-                    2: [RgbPixel(255, 0, 0), RgbPixel(150, 0, 0)],
-                }
-                self.modestate.lightbar_pairings = [[0, 2], [1]]
+            self.modestate.color_pallette = {
+                0: [RgbPixel(255, 0, 0), RgbPixel(150, 0, 0)],
+                1: [RgbPixel(0, 255, 0), RgbPixel(0, 150, 0)],
+                2: [RgbPixel(255, 0, 0), RgbPixel(150, 0, 0)],
+            }
+            self.modestate.lightbar_pairings = [[0, 2], [1]]
         if current_track == "Lost Woods":
             self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
             if not isinstance(self.modestate, RandomColorChangesLightBar):
@@ -320,7 +348,7 @@ class LightbarDesigner:
                 self.lightbar_center.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
                 self.lightbar_right.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
 
-            if 146.4 < current_track_elapsed < 249.5:
+            if 146.0 < current_track_elapsed < 249.5:
                 self.modestate.purple_sky = True
             else:
                 self.modestate.purple_sky = False

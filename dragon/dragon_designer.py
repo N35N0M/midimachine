@@ -61,8 +61,7 @@ class DragonDesigner:
             self.mode = DragonMode.THOMAS_THE_TANK_ENGINE
             if self.modestate is None:
                 self.modestate = ThomasState()
-
-        if current_track == "Amberina Sun":
+        elif current_track == "Amberina Sun":
             if 249.5 > current_track_elapsed > 209:
                 self.mode = DragonMode.PULSING_EYES
             else:
@@ -74,8 +73,7 @@ class DragonDesigner:
             else:
                 self.stage.dragon_left.smoke_machine_on = False
                 self.stage.dragon_right.smoke_machine_on = False
-
-        if current_track == "The Girl and the Robot":
+        elif current_track == "The Girl and the Robot":
             # Eye cues
             if (16 < current_track_elapsed < 31) or \
                     (80 < current_track_elapsed < 95) or \
@@ -99,6 +97,8 @@ class DragonDesigner:
             else:
                 self.stage.dragon_left.smoke_machine_on = False
                 self.stage.dragon_right.smoke_machine_on = False
+        else:
+            self.mode = DragonMode.PULSING_EYES
 
         if self.mode == DragonMode.ALL_OFF:
             self.stage.dragon_left.left_eye = RgbPixel(0, 0, 0)
@@ -163,8 +163,17 @@ class DragonDesigner:
 
         if update_type == UpdateType.BEAT:
             if self.mode == DragonMode.THOMAS_THE_TANK_ENGINE:
-                self.stage.dragon_left.left_eye = RgbPixel(255, 0, 0)
-                self.stage.dragon_left.right_eye = RgbPixel(255, 0, 0)
+                counter_val = self.internal_pulse_counter % 48
+                if counter_val < 24:
+                    self.stage.dragon_left.left_eye = RgbPixel(0, 0, int((255 / 24) * counter_val))
+                    self.stage.dragon_left.right_eye = RgbPixel(0, 0, int((255 / 24) * counter_val))
+                    self.stage.dragon_right.left_eye = RgbPixel(0, 0, int((255 / 24) * counter_val))
+                    self.stage.dragon_right.right_eye = RgbPixel(0, 0, int((255 / 24) * counter_val))
+                else:
+                    self.stage.dragon_left.left_eye = RgbPixel(0, 0, int(255 - ((255 / 24) * (counter_val - 24))))
+                    self.stage.dragon_left.right_eye = RgbPixel(0, 0, int(255 - ((255 / 24) * (counter_val - 24))))
+                    self.stage.dragon_right.left_eye = RgbPixel(0, 0, int(255 - ((255 / 24) * (counter_val - 24))))
+                    self.stage.dragon_right.right_eye = RgbPixel(0, 0, int(255 - ((255 / 24) * (counter_val - 24))))
 
             # See if Thomas is currently under the left or right dragon
             if self.stage.lightbar_one.pixels[31] == RgbPixel(107, 107, 107):
