@@ -97,8 +97,38 @@ class DragonDesigner:
             else:
                 self.stage.dragon_left.smoke_machine_on = False
                 self.stage.dragon_right.smoke_machine_on = False
+        elif current_track == "Junkyard Dunebuggy":
+            self.mode = DragonMode.PULSING_EYES
+            if (172.3 < current_track_elapsed < 173.3) or \
+                    (182.6 < current_track_elapsed < 186) or \
+                    (192.1 < current_track_elapsed < 195) or \
+                    (96.1 < current_track_elapsed < 97.1) or \
+                    (220.3 < current_track_elapsed < 221.6):
+                self.stage.dragon_left.smoke_machine_on = True
+                self.stage.dragon_right.smoke_machine_on = True
+            else:
+                self.stage.dragon_left.smoke_machine_on = False
+                self.stage.dragon_right.smoke_machine_on = False
+
+        elif current_track == "We Don't Need Another Hero (Thunderdome)":
+            self.mode = DragonMode.PULSING_EYES
+            if (14.8 < current_track_elapsed < 16.8) or (17.3 < current_track_elapsed< 19.3) or \
+                    (34 < current_track_elapsed < 36) or (36.5 < current_track_elapsed < 38.5) or \
+                    (107 < current_track_elapsed < 109) or (109.5 < current_track_elapsed < 111.5) or \
+                    (126.5 < current_track_elapsed < 128.5) or (129 < current_track_elapsed < 131) or \
+                    (201 < current_track_elapsed < 205) or \
+                    (53.5 < current_track_elapsed < 55.5) or (56.0 < current_track_elapsed < 58.0):
+                self.stage.dragon_left.smoke_machine_on = True
+                self.stage.dragon_right.smoke_machine_on = True
+            else:
+                self.stage.dragon_left.smoke_machine_on = False
+                self.stage.dragon_right.smoke_machine_on = False
+
+
         else:
             self.mode = DragonMode.PULSING_EYES
+            self.stage.dragon_left.smoke_machine_on = False
+            self.stage.dragon_right.smoke_machine_on = False
 
         if self.mode == DragonMode.ALL_OFF:
             self.stage.dragon_left.left_eye = RgbPixel(0, 0, 0)
@@ -175,12 +205,12 @@ class DragonDesigner:
                     self.stage.dragon_right.left_eye = RgbPixel(0, 0, int(255 - ((255 / 24) * (counter_val - 24))))
                     self.stage.dragon_right.right_eye = RgbPixel(0, 0, int(255 - ((255 / 24) * (counter_val - 24))))
 
-            # See if Thomas is currently under the left or right dragon
-            if self.stage.lightbar_one.pixels[31] == RgbPixel(107, 107, 107):
-                if self.modestate.last_fired == LastFired.RIGHT:
-                    self.dragon_fire(self.stage.dragon_left)
-                    self.modestate.last_fired = LastFired.LEFT
-            elif self.stage.lightbar_two.pixels[31] == RgbPixel(107, 107, 107):
-                if self.modestate.last_fired == LastFired.LEFT:
-                    self.dragon_fire(self.stage.dragon_right)
-                    self.modestate.last_fired = LastFired.RIGHT
+                # See if Thomas is currently under the left or right dragon
+                if self.stage.lightbar_one.pixels[31] == RgbPixel(107, 107, 107):
+                    if self.modestate.last_fired == LastFired.RIGHT:
+                        self.dragon_fire(self.stage.dragon_left)
+                        self.modestate.last_fired = LastFired.LEFT
+                elif self.stage.lightbar_two.pixels[31] == RgbPixel(107, 107, 107):
+                    if self.modestate.last_fired == LastFired.LEFT:
+                        self.dragon_fire(self.stage.dragon_right)
+                        self.modestate.last_fired = LastFired.RIGHT

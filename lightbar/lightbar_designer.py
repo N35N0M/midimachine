@@ -140,6 +140,60 @@ half_sun = [
     RgbPixel(255, 255, 0)
 ]
 
+quarter_purple_wheel = [
+    RgbPixel(75,0,130),
+    RgbPixel(128, 0, 128),
+    RgbPixel(139,0,139),
+    RgbPixel(139, 0, 139),
+    RgbPixel(153,50,204),
+    RgbPixel(153, 50, 204),
+    RgbPixel(148,0,211),
+    RgbPixel(148, 0, 211),
+    RgbPixel(138,43,226),
+    RgbPixel(138, 43, 226),
+    RgbPixel(147,112,219),
+    RgbPixel(147, 112, 219),
+    RgbPixel(186,85,211),
+    RgbPixel(186, 85, 211),
+    RgbPixel(218,112,214),
+    RgbPixel(218, 112, 214),
+    RgbPixel(238,130,238),
+    RgbPixel(238, 130, 238),
+    RgbPixel(221,160,221),
+    RgbPixel(221, 160, 221),
+    RgbPixel(216,191,216),
+    RgbPixel(216, 191, 216),
+    RgbPixel(230,230,250),
+    RgbPixel(230, 230, 250),
+]
+
+quarter_orange_wheel = [
+    RgbPixel(255,127,66),
+    RgbPixel(255,130,66),
+    RgbPixel(255,134,66),
+    RgbPixel(255,138,66),
+    RgbPixel(255,143,66),
+    RgbPixel(255,147,66),
+    RgbPixel(255,150,66),
+    RgbPixel(255,154,66),
+    RgbPixel(255,158,66),
+    RgbPixel(255,162,66),
+    RgbPixel(255,166,66),
+    RgbPixel(255,170,66),
+    RgbPixel(255,174,66),
+    RgbPixel(255,178,66),
+    RgbPixel(255,182,66),
+    RgbPixel(255,186,66),
+    RgbPixel(255,190,66),
+    RgbPixel(255,194,66),
+    RgbPixel(255,198,66),
+    RgbPixel(255,202,66),
+    RgbPixel(255,221,66),
+    RgbPixel(255,225,66),
+    RgbPixel(255,229,66),
+    RgbPixel(255,233,66),
+]
+
 @dataclasses.dataclass
 class PixelSunstate:
     fade_in = True
@@ -233,11 +287,20 @@ class Mode(enum.Enum):
     OFF = 9
     NOOT_NOOT = 10
     PIXEL_SUN = 11
+    COLOR_WHEEL = 12
+
+
+@dataclasses.dataclass
+class ColorWheelState:
+    """
+    Divide the strip in two. Each strip has two mirrored color ranges that are identical but mirrored.
+    Rotate both halves evenly to get a cool effect!
+    """
+    pixels: list[RgbPixel] = dataclasses.field(default_factory=lambda: quarter_purple_wheel + list(reversed(quarter_purple_wheel)) + quarter_purple_wheel + list(reversed(quarter_purple_wheel)))
 
 class UpdateType(enum.Enum):
     PULSE = 1
     BEAT = 2
-
 
 class LightbarDesigner:
     def __init__(self, midi_clock, lightbar_left, lightbar_right, lightbar_center, traktor_metadata: TraktorMetadata):
@@ -270,14 +333,19 @@ class LightbarDesigner:
         current_track = self.traktor_metadata.current_track_deck_a if self.traktor_metadata.master_deck == "A" else self.traktor_metadata.current_track_deck_b
         current_track_elapsed = self.traktor_metadata.current_track_elapsed_deck_a if self.traktor_metadata.master_deck == "A" else self.traktor_metadata.current_track_elapsed_deck_b
         if current_track == "Junkyard Dunebuggy":
-            if (0 < current_track_elapsed < 95.8) or (172.8 < current_track_elapsed < 182.2):
+            if (29 < current_track_elapsed < 48) or (77 < current_track_elapsed < 95.8):
+                self.mode = Mode.COLOR_WHEEL
+                if not isinstance(self.modestate, ColorWheelState):
+                    self.modestate = ColorWheelState()
+                    self.modestate.pixels = quarter_orange_wheel + list(reversed(quarter_orange_wheel)) + quarter_orange_wheel + list(reversed(quarter_orange_wheel))
+            elif (0 < current_track_elapsed < 95.8) or (172.8 < current_track_elapsed < 182.2):
                 self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
                 if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
                     self.modestate = OrganizedUpdateOfLightbars()
                 self.modestate.color_pallette = {
-                    0: [RgbPixel(255,140,0), RgbPixel(255,165,0), RgbPixel(255,215,0)],
-                    1: [RgbPixel(255,140,0), RgbPixel(255,165,0), RgbPixel(255,215,0)],
-                    2: [RgbPixel(255,140,0), RgbPixel(255,165,0), RgbPixel(255,215,0)],
+                    0: [RgbPixel(255,140,0), RgbPixel(255,215,0)],
+                    1: [RgbPixel(255,140,0), RgbPixel(255,215,0)],
+                    2: [RgbPixel(255,140,0), RgbPixel(255,215,0)],
                 }
                 self.modestate.lightbar_pairings = [[0, 2], [1]]
             elif (95.8 < current_track_elapsed < 172.8):
@@ -299,19 +367,42 @@ class LightbarDesigner:
                 self.modestate = None
 
         if current_track == "We Don't Need Another Hero (Thunderdome)":
-            self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
-            if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
-                self.modestate = OrganizedUpdateOfLightbars()
-            self.modestate.color_pallette = {
-                0: [RgbPixel(255, 0, 0), RgbPixel(150, 0, 0)],
-                1: [RgbPixel(0, 255, 0), RgbPixel(0, 150, 0)],
-                2: [RgbPixel(255, 0, 0), RgbPixel(150, 0, 0)],
-            }
-            self.modestate.lightbar_pairings = [[0, 2], [1]]
+            if (0 < current_track_elapsed < 73.8) or \
+                (92.5 < current_track_elapsed < 149) or \
+                    (204 < current_track_elapsed < 238):
+                self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
+                if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                    self.modestate = OrganizedUpdateOfLightbars()
+                self.modestate.color_pallette = {
+                    0: [RgbPixel(255, 0, 0), RgbPixel(150, 0, 0)],
+                    1: [RgbPixel(0, 255, 0), RgbPixel(0, 150, 0)],
+                    2: [RgbPixel(255, 0, 0), RgbPixel(150, 0, 0)],
+                }
+                self.modestate.lightbar_pairings = [[0, 2], [1]]
+            elif (73.8 < current_track_elapsed < 92.5) or \
+                    (149 < current_track_elapsed < 182):
+                self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
+                if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                    self.modestate = OrganizedUpdateOfLightbars()
+                self.modestate.color_pallette = {
+                    0: [RgbPixel(50,205,50), RgbPixel(0,255,0)],  #limegreens
+                    1: [RgbPixel(135,206,235), RgbPixel(30,144,255)], #skyblues
+                    2: [RgbPixel(50,205,50), RgbPixel(0,255,0)],  #limegreens
+                }
+            elif (185.3 < current_track_elapsed < 204):
+                self.mode = Mode.PIXEL_SUN
+                if not isinstance(self.modestate, PixelSunstate):
+                    self.modestate = PixelSunstate()
+                self.modestate.purple_sky = False
+                self.modestate.beat_shift = True
+                self.modestate.fade_in = False
+            else:
+                self.mode = Mode.OFF
+
         if current_track == "Lost Woods":
-            self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
-            if not isinstance(self.modestate, RandomColorChangesLightBar):
-                self.modestate = RandomColorChangesLightBar()
+            self.mode = Mode.COLOR_WHEEL
+            if not isinstance(self.modestate, ColorWheelState):
+                self.modestate = ColorWheelState()
 
         if current_track == "Biggie smalls the tank engine":
             if current_track_elapsed > 20.8:
@@ -328,6 +419,10 @@ class LightbarDesigner:
             else:
                 self.mode = Mode.OFF
                 self.modestate = None
+        if current_track == "Milestones":
+            self.mode = Mode.RETROWAVE_GRID
+            if not isinstance(self.modestate, RetrowaveGridState):
+                self.modestate = RetrowaveGridState()
         if current_track == "The Girl and the Robot":
             if current_track_elapsed > 222:
                 self.mode = Mode.OFF
@@ -412,6 +507,19 @@ class LightbarDesigner:
             return
 
 
+        if self.mode == Mode.COLOR_WHEEL and isinstance(self.modestate, ColorWheelState):
+            left_half = deque(self.modestate.pixels[0:48])
+            right_half = deque(self.modestate.pixels[48:96])
+
+            left_half.rotate(-1)
+            right_half.rotate(1)
+
+            self.modestate.pixels = list(left_half) + list(right_half)
+
+            self.lightbar_left.pixels = self.modestate.pixels[0:32]
+            self.lightbar_center.pixels = self.modestate.pixels[32:64]
+            self.lightbar_right.pixels = self.modestate.pixels[64:96]
+            return
 
         if self.mode == Mode.NOOT_NOOT and isinstance(self.modestate, NootNootState):
             # One noot happens during a half beat.
