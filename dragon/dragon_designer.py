@@ -62,6 +62,9 @@ class DragonDesigner:
             if self.modestate is None:
                 self.modestate = ThomasState()
 
+        if current_track == "Amberina Sun":
+            self.mode = DragonMode.ALL_OFF
+
         if current_track == "The Girl and the Robot":
             # Eye cues
             if (16 < current_track_elapsed < 31) or \

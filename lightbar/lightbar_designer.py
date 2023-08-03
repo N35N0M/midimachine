@@ -1,14 +1,15 @@
+import copy
 import dataclasses
 import enum
 import random
 import typing
 
 from lightbar.lightbar import LightBar
-from common_types import UpdateFrequency, RgbPixel
+from common_types import UpdateFrequency, RgbPixel, from_color_to_rgb_pixel
 from midi.midi_input_handler import MidiInputHandler
 from traktor_metadata import TraktorMetadata
 from utils import generate_random_color
-
+from colour import Color
 from collections import deque
 from itertools import islice
 
@@ -50,6 +51,68 @@ class RetrowaveGridState:
 class NootNootState:
     pulse_counter = 0
 
+sky = [
+    RgbPixel(0, 191, 255),
+    RgbPixel(0, 191, 255),
+    RgbPixel(0, 191, 255),
+    RgbPixel(0, 191, 255),
+    RgbPixel(0, 191, 255),
+    RgbPixel(0, 191, 255),
+    RgbPixel(0, 191, 255),
+    RgbPixel(0, 191, 255),
+    RgbPixel(135, 206, 235),
+    RgbPixel(135, 206, 235),
+    RgbPixel(135, 206, 235),
+    RgbPixel(135, 206, 235),
+    RgbPixel(135, 206, 235),
+    RgbPixel(135, 206, 235),
+    RgbPixel(135, 206, 235),
+    RgbPixel(135, 206, 235),
+    RgbPixel(135, 206, 250),
+    RgbPixel(135, 206, 250),
+    RgbPixel(135, 206, 250),
+    RgbPixel(135, 206, 250),
+    RgbPixel(135, 206, 250),
+    RgbPixel(135, 206, 250),
+    RgbPixel(173, 216, 230),
+    RgbPixel(173, 216, 230),
+    RgbPixel(173, 216, 230),
+    RgbPixel(173, 216, 230),
+    RgbPixel(173, 216, 230),
+    RgbPixel(173, 216, 230),
+    RgbPixel(176, 224, 230),
+    RgbPixel(176, 224, 230),
+    RgbPixel(176, 224, 230),
+    RgbPixel(176, 224, 230),
+]
+
+half_sun = [
+    RgbPixel(255,140,0),
+    RgbPixel(255,140,0),
+    RgbPixel(255,140,0),
+    RgbPixel(255,140,0),
+    RgbPixel(255,140,0),
+    RgbPixel(255,140,0),
+    RgbPixel(255,165,0),
+    RgbPixel(255,165,0),
+    RgbPixel(255,165,0),
+    RgbPixel(255,165,0),
+    RgbPixel(255,165,0),
+    RgbPixel(255,165,0),
+    RgbPixel(255,255,102),
+    RgbPixel(255,255,102),
+    RgbPixel(255, 255, 0),
+    RgbPixel(255, 255, 0)
+]
+
+@dataclasses.dataclass
+class PixelSunstate:
+    fade_in = True
+    fade_in_counter = 0
+    beat_shift = False
+    beat_shift_counter = 8
+    beat_shift_direction = Direction.RIGHT
+    pixels: deque[RgbPixel] = deque(sky + half_sun + list(reversed(copy.deepcopy(half_sun))) + list(reversed(copy.deepcopy(sky))))
 
 @dataclasses.dataclass
 class TankEngineState:
@@ -124,10 +187,12 @@ class Mode(enum.Enum):
     RETROWAVE_GRID = 8
     OFF = 9
     NOOT_NOOT = 10
+    PIXEL_SUN = 11
 
 class UpdateType(enum.Enum):
     PULSE = 1
     BEAT = 2
+
 
 class LightbarDesigner:
     def __init__(self, midi_clock, lightbar_left, lightbar_right, lightbar_center, traktor_metadata: TraktorMetadata):
@@ -188,6 +253,70 @@ class LightbarDesigner:
         if current_track == "Make Me Thomas (feat. Jawn Legend)":
             self.mode = Mode.THOMAS_THE_DANK_ENGINE
             self.modestate = TankEngineState()
+        if current_track == "Amberina Sun":
+            self.mode = Mode.PIXEL_SUN
+
+            if not isinstance(self.modestate, PixelSunstate):
+                self.modestate = PixelSunstate()
+                self.lightbar_left.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
+                self.lightbar_center.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
+                self.lightbar_right.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
+
+            if 0 < current_track_elapsed < 41.5:
+                self.modestate.fade_in = True
+            elif 41.5 < current_track_elapsed:
+                self.modestate.fade_in = False
+                self.modestate.fade_in_counter = 0
+                self.modestate.beat_shift = True
+            else:
+                self.modestate.fade_in_counter = 0
+                self.modestate.fade_in = False
+
+        if self.mode == Mode.PIXEL_SUN and isinstance(self.modestate, PixelSunstate):
+            """
+            The middle light bar is a sun.
+            The left and right light bars are the clouds.
+            """
+
+            if update_type == UpdateType.BEAT:
+                if self.modestate.fade_in:
+                    lightbar_left_pixels = copy.deepcopy(list(islice(self.modestate.pixels, 0, 32)))
+                    lightbar_center_pixels = copy.deepcopy(list(islice(self.modestate.pixels, 32, 64)))
+                    lightbar_right_pixels = copy.deepcopy(list(islice(self.modestate.pixels, 64, 96)))
+
+                    if self.modestate.fade_in_counter <= 32:
+                        self.lightbar_left.pixels = lightbar_left_pixels[0:self.modestate.fade_in_counter] + [RgbPixel(0, 0, 0)] * (32 - self.modestate.fade_in_counter)
+                        self.lightbar_right.pixels = list(reversed(self.lightbar_left.pixels))
+                        self.lightbar_center.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
+                    elif 32 < self.modestate.fade_in_counter < 32+17:
+                        counter = self.modestate.fade_in_counter - 32
+                        half_the_sun = lightbar_center_pixels[0:counter] + [RgbPixel(0, 0, 0)] * (16 - counter)
+                        self.lightbar_center.pixels = half_the_sun + list(reversed(half_the_sun))
+
+                    self.modestate.fade_in_counter += 1
+                else:
+                    self.lightbar_left.pixels = list(islice(self.modestate.pixels, 0, 32))
+                    self.lightbar_center.pixels = list(islice(self.modestate.pixels, 32, 64))
+                    self.lightbar_right.pixels = list(islice(self.modestate.pixels, 64, 96))
+
+                if self.modestate.beat_shift:
+                    if self.modestate.beat_shift_direction == Direction.RIGHT:
+                        self.modestate.pixels.rotate(1)
+                    else:
+                        self.modestate.pixels.rotate(-1)
+                    self.modestate.beat_shift_counter += 1
+
+                    print(self.modestate.beat_shift_counter)
+                    print(self.modestate.beat_shift_counter % 16 == 0)
+                    if self.modestate.beat_shift_counter % 16 == 0:
+                        if self.modestate.beat_shift_direction == Direction.RIGHT:
+                            self.modestate.beat_shift_direction = Direction.LEFT
+                        elif self.modestate.beat_shift_direction == Direction.LEFT:
+                            self.modestate.beat_shift_direction = Direction.RIGHT
+
+            return
+
+
 
         if self.mode == Mode.NOOT_NOOT and isinstance(self.modestate, NootNootState):
             # One noot happens during a half beat.

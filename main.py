@@ -1,14 +1,16 @@
 from __future__ import print_function
 
 import json
+import os
 import threading
 import time
 import pygame
 from rtmidi.midiutil import open_midiinput
-
+import DMXEnttecPro.src.DMXEnttecPro.controller as dmx_driver
 from dragon.dragon_designer import DragonDesigner
 from lightbar.lightbar_designer import LightbarDesigner
 from midi.midi_input_handler import MidiInputHandler
+from stage.dmx_adapter import map_stage_to_dmx
 from stage.pygame_adapter import map_stage_to_pygame
 from stage.stage import create_stage
 from traktor_metadata import TraktorMetadata
@@ -22,6 +24,8 @@ log.setLevel(logging.ERROR)
 app = Flask(__name__)
 
 traktor_metadata = TraktorMetadata()
+
+simulation = os.getenv("SIMULATION", None)
 
 @app.route('/deckLoaded/<deck>', methods=['POST', 'GET'])
 def deckLoaded(deck):
@@ -44,6 +48,17 @@ def updateMasterClock():
         return jsonify(success=True)
     else:
         return jsonify(success=True)
+
+if simulation is None:
+    ctrl = dmx_driver.Controller(
+        port_string="/dev/cu.usbserial-EN379589",
+        dmx_size=512,
+        baudrate=250000,
+        timeout=1,
+        auto_submit=False,
+    )
+else:
+    ctrl = None
 
 @app.route('/success/<name>')
 def success(name):
@@ -77,7 +92,9 @@ def main():
         while True:
             # Refresh at 44Hz (the "standard" framerate for DMX)
             map_stage_to_pygame(stage, surface)
-            # map_stage_to_dmx(stage)
+
+            if ctrl is not None:
+                map_stage_to_dmx(stage, ctrl)
             time.sleep(1 / 44)
 
     except KeyboardInterrupt:
