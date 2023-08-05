@@ -289,7 +289,7 @@ class Mode(enum.Enum):
     BLINK = 3
     BEAT_SQUARE = 4
     BEAT_SQUARE_BOUNCING = 5
-    RANDOM_LIGHTBAR_CHANGES_COLOR = 6
+    LIGHTBARS_CHANGE_COLOR = 6
     THOMAS_THE_DANK_ENGINE = 7
     RETROWAVE_GRID = 8
     OFF = 9
@@ -319,7 +319,7 @@ class LightbarDesigner:
         self.lightbar_right: LightBar = lightbar_right
         self.traktor_metadata: TraktorMetadata = traktor_metadata
         self.current_color = generate_random_color()
-        self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
+        self.mode = Mode.LIGHTBARS_CHANGE_COLOR
         self.modestate:  typing.Union[TankEngineState, RetrowaveGridState, None] = None
         self.internal_pulse_counter = 0
         self.internal_beat_counter = 0
@@ -348,7 +348,7 @@ class LightbarDesigner:
                     self.modestate = ColorWheelState()
                     self.modestate.pixels = quarter_orange_wheel + list(reversed(quarter_orange_wheel)) + quarter_orange_wheel + list(reversed(quarter_orange_wheel))
             elif (0 < current_track_elapsed < 95.8) or (172.8 < current_track_elapsed < 182.2):
-                self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
+                self.mode = Mode.LIGHTBARS_CHANGE_COLOR
                 if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
                     self.modestate = OrganizedUpdateOfLightbars()
                 self.modestate.color_pallette = {
@@ -374,12 +374,11 @@ class LightbarDesigner:
             else:
                 self.mode = Mode.OFF
                 self.modestate = None
-
-        if current_track == "We Don't Need Another Hero (Thunderdome)":
+        elif current_track == "We Don't Need Another Hero (Thunderdome)":
             if (0 < current_track_elapsed < 73.8) or \
                 (92.5 < current_track_elapsed < 149) or \
                     (204 < current_track_elapsed < 238):
-                self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
+                self.mode = Mode.LIGHTBARS_CHANGE_COLOR
                 if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
                     self.modestate = OrganizedUpdateOfLightbars()
                 self.modestate.color_pallette = {
@@ -390,7 +389,7 @@ class LightbarDesigner:
                 self.modestate.lightbar_pairings = [[0, 2], [1]]
             elif (73.8 < current_track_elapsed < 92.5) or \
                     (149 < current_track_elapsed < 182):
-                self.mode = Mode.RANDOM_LIGHTBAR_CHANGES_COLOR
+                self.mode = Mode.LIGHTBARS_CHANGE_COLOR
                 if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
                     self.modestate = OrganizedUpdateOfLightbars()
                 self.modestate.color_pallette = {
@@ -407,20 +406,18 @@ class LightbarDesigner:
                 self.modestate.fade_in = False
             else:
                 self.mode = Mode.OFF
-
-        if current_track == "Lost Woods":
+        elif current_track == "Lost Woods":
             self.mode = Mode.COLOR_WHEEL
             if not isinstance(self.modestate, ColorWheelState):
                 self.modestate = ColorWheelState()
-
-        if current_track == "Biggie smalls the tank engine":
+        elif current_track == "Biggie smalls the tank engine":
             if current_track_elapsed > 20.8:
                 self.mode = Mode.THOMAS_THE_DANK_ENGINE
                 self.modestate = TankEngineState()
             else:
                 self.mode = Mode.OFF
                 self.modestate = None
-        if current_track == "Noot noot the police":
+        elif current_track == "Noot noot the police":
             if current_track_elapsed > 1.9:
                 self.mode = Mode.NOOT_NOOT
                 if not isinstance(self.modestate, NootNootState) and update_type == UpdateType.BEAT:
@@ -428,7 +425,7 @@ class LightbarDesigner:
             else:
                 self.mode = Mode.OFF
                 self.modestate = None
-        if current_track == "Milestones":
+        elif current_track == "Milestones":
             # self.mode = Mode.RETROWAVE_GRID
             # if not isinstance(self.modestate, RetrowaveGridState):
             #     self.modestate = RetrowaveGridState()
@@ -440,8 +437,7 @@ class LightbarDesigner:
                 self.modestate.beat_interval = 1
             else:
                 self.modestate.beat_interval = 2
-
-        if current_track == "The Girl and the Robot":
+        elif current_track == "The Girl and the Robot":
             if current_track_elapsed > 222:
                 self.mode = Mode.OFF
                 self.modestate = None
@@ -449,10 +445,10 @@ class LightbarDesigner:
                 self.mode = Mode.RETROWAVE_GRID
                 if not isinstance(self.modestate, RetrowaveGridState):
                     self.modestate = RetrowaveGridState()
-        if current_track == "Make Me Thomas (feat. Jawn Legend)":
+        elif current_track == "Make Me Thomas (feat. Jawn Legend)":
             self.mode = Mode.THOMAS_THE_DANK_ENGINE
             self.modestate = TankEngineState()
-        if current_track == "Amberina Sun":
+        elif current_track == "Amberina Sun":
             self.mode = Mode.PIXEL_SUN
 
             if not isinstance(self.modestate, PixelSunstate):
@@ -475,6 +471,39 @@ class LightbarDesigner:
             else:
                 self.modestate.fade_in_counter = 0
                 self.modestate.fade_in = False
+        else:
+            # Select a random (good) effect for random song.
+            if not self.traktor_metadata.master_deck_change_handled:
+                random_mode = random.sample([Mode.COLOR_WAVE, Mode.RETROWAVE_GRID, Mode.LIGHTBARS_CHANGE_COLOR], 1)[0]
+                self.mode = random_mode
+                if random_mode == Mode.COLOR_WAVE:
+                    self.modestate = ColorwaveState()
+                    self.modestate.beat_interval = 2
+                    self.modestate.colour_pallette = [generate_random_color(), generate_random_color(), generate_random_color()]
+                elif random_mode == Mode.PIXEL_SUN:
+                    self.modestate = PixelSunstate()
+                    self.modestate.beat_shift = True
+                    self.modestate.fade_in = False
+                elif random_mode == Mode.RETROWAVE_GRID:
+                    self.modestate = RetrowaveGridState()
+                elif random_mode == Mode.LIGHTBARS_CHANGE_COLOR:
+                    self.modestate = OrganizedUpdateOfLightbars()
+                    random_color_pallete_one = [generate_random_color(), generate_random_color(), generate_random_color()]
+                    random_color_pallete_two = [generate_random_color(), generate_random_color(), generate_random_color()]
+                    self.modestate.color_pallette = {
+                        0: random_color_pallete_one,
+                        1: random_color_pallete_two,
+                        2: random_color_pallete_one,
+                    }
+                    self.modestate.lightbar_pairings = [[0,2], [1]]
+                self.traktor_metadata.master_deck_change_handled = True
+
+            if self.mode == Mode.RETROWAVE_GRID:
+                # There is a bug where the color spawn changes color before it shifts.
+                # But the whole effect is in fact a bug, so it's fine.
+                if not self.lightbar_center.pixels[16] == self.modestate.color:
+                    self.modestate.color = generate_random_color()
+
 
         if self.mode == Mode.COLOR_WAVE and isinstance(self.modestate, ColorwaveState):
             new_color = self.modestate.previous_color
@@ -707,7 +736,7 @@ class LightbarDesigner:
                 self.lightbar_center.set_pixel(i, self.current_color)
                 self.lightbar_right.set_pixel(i, self.current_color)
 
-        if self.mode == Mode.RANDOM_LIGHTBAR_CHANGES_COLOR and isinstance(self.modestate, (RandomUpdateAmountOfLightbars, OrganizedUpdateOfLightbars)):
+        if self.mode == Mode.LIGHTBARS_CHANGE_COLOR and isinstance(self.modestate, (RandomUpdateAmountOfLightbars, OrganizedUpdateOfLightbars)):
             # Handle beat frequency first.
             if self.modestate.update_frequency == UpdateFrequency.BEAT and update_type == UpdateType.BEAT:
                 pass

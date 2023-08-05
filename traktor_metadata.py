@@ -12,3 +12,4 @@ class TraktorMetadata:
     current_track_elapsed_deck_b = 0
 
     master_deck = "N/A"
+    master_deck_change_handled = False

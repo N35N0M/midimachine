@@ -44,6 +44,7 @@ def deckLoaded(deck):
 def updateMasterClock():
     if request.method == 'POST':
         traktor_metadata.master_deck = json.loads(request.data)["deck"]
+        traktor_metadata.master_deck_change_handled = False
         print(json.loads(request.data))
         return jsonify(success=True)
     else:
