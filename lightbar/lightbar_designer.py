@@ -12,11 +12,13 @@ from utils import generate_random_color
 from collections import deque
 from itertools import islice
 
+purple_disco = [RgbPixel(123, 29, 175), RgbPixel(255, 47, 185)]
 
 
 @dataclasses.dataclass
 class RandomUpdateAmountOfLightbars:
-    amount_of_lightbars: int = 1
+    update_frequency: UpdateFrequency = UpdateFrequency.BEAT
+    amount_of_lightbars: int = 3
 
 @dataclasses.dataclass
 class OrganizedUpdateOfLightbars:
@@ -298,6 +300,13 @@ class Mode(enum.Enum):
     COLOR_WHEEL = 12
     COLOR_WAVE = 13
 
+disco_pallette = [
+    RgbPixel(15, 192, 252),
+    RgbPixel(123, 29, 175),
+    RgbPixel(255, 47, 185),
+    RgbPixel(212, 255, 71),
+    RgbPixel(27, 54, 73),
+]
 
 @dataclasses.dataclass
 class ColorWheelState:
@@ -374,6 +383,149 @@ class LightbarDesigner:
             else:
                 self.mode = Mode.OFF
                 self.modestate = None
+        elif current_track == "Disco Guy (Original Version)":
+            self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+
+            if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                self.modestate = OrganizedUpdateOfLightbars()
+            self.modestate.color_pallette = {
+                0: purple_disco,
+                1: purple_disco,
+                2: purple_disco,
+            }
+            self.modestate.lightbar_pairings = [[0, 2], [1]]
+        elif current_track == "Skibidi (Romantic Edition)":
+            self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+
+            if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                self.modestate = OrganizedUpdateOfLightbars()
+            self.modestate.color_pallette = {
+                0: purple_disco,
+                1: purple_disco,
+                2: purple_disco,
+            }
+            self.modestate.lightbar_pairings = [[0, 2], [1]]
+        elif current_track == "Don't Leave Me Lonely (feat. YEBBA) [Purple Disco Machine Remix]":
+            self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+
+            if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                self.modestate = OrganizedUpdateOfLightbars()
+            self.modestate.color_pallette = {
+                0: disco_pallette,
+                1: disco_pallette,
+                2: disco_pallette,
+            }
+            self.modestate.lightbar_pairings = [[0, 2], [1]]
+        elif current_track == "Disco Inferno":
+            self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+
+            if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                self.modestate = OrganizedUpdateOfLightbars()
+            self.modestate.color_pallette = {
+                0: disco_pallette,
+                1: disco_pallette,
+                2: disco_pallette,
+            }
+            self.modestate.lightbar_pairings = [[0, 2], [1]]
+        elif current_track == "Cha Cha Cha":
+            self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+
+            if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                self.modestate = OrganizedUpdateOfLightbars()
+
+            pallette = [RgbPixel(255,20,147), RgbPixel(0,255,0)]
+            self.modestate.color_pallette = {
+                0: pallette,
+                1: pallette,
+                2: pallette,
+            }
+            self.modestate.lightbar_pairings = [[0, 2], [1]]
+        elif current_track == "Voodoo? (Lazywax Remix)":
+            self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+
+            if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                self.modestate = OrganizedUpdateOfLightbars()
+            self.modestate.color_pallette = {
+                0: disco_pallette,
+                1: disco_pallette,
+                2: disco_pallette,
+            }
+            self.modestate.lightbar_pairings = [[0, 2], [1]]
+        elif current_track == "City Boy":
+            self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+            self.modestate = RandomUpdateAmountOfLightbars()
+        elif current_track == "They're Taking The Hobbits To Isengard":
+            self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+            self.modestate = RandomUpdateAmountOfLightbars()
+        elif current_track == "Bezos I":
+            if current_track_elapsed > 42:
+                self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+                self.modestate = RandomUpdateAmountOfLightbars()
+            else:
+                self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+                if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                    self.modestate = OrganizedUpdateOfLightbars()
+                self.modestate.color_pallette = {
+                    0: [RgbPixel(255, 153, 0), RgbPixel(0,0,0)],
+                    1: [RgbPixel(255, 153, 0), RgbPixel(0,0,0)],
+                    2: [RgbPixel(255, 153, 0), RgbPixel(0,0,0)],
+                }
+                self.modestate.lightbar_pairings = [[0, 2], [1]]
+
+                if 7.2 < current_track_elapsed < 7.9:
+                    self.modestate.update_frequency = UpdateFrequency.HALF_BEAT
+                elif 15.5 < current_track_elapsed < 16.3:
+                    self.modestate.update_frequency = UpdateFrequency.HALF_BEAT
+                elif 24.1 < current_track_elapsed < 24.9:
+                    self.modestate.update_frequency = UpdateFrequency.HALF_BEAT
+                elif 7.9 < current_track_elapsed < 8.3:
+                    return
+                elif 16.4 < current_track_elapsed < 16.7:
+                    return
+                elif 25 < current_track_elapsed < 25.3:
+                    return
+                else:
+                    self.modestate.update_frequency = UpdateFrequency.BEAT
+        elif current_track == "Keep Moving":
+            if 132.2 < current_track_elapsed < 149.4:
+                self.mode = Mode.COLOR_WAVE
+                if not isinstance(self.modestate, ColorwaveState):
+                    self.modestate = ColorwaveState()
+                    self.modestate.colour_pallette = [RgbPixel(219, 172, 52), RgbPixel(226, 88, 37)]
+                    self.modestate.beat_interval = 2
+            elif current_track_elapsed > 28.5:
+                self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+                if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                    self.modestate = OrganizedUpdateOfLightbars()
+                self.modestate.color_pallette = {
+                    0: [RgbPixel(219, 172, 52), RgbPixel(226, 88, 37)],
+                    1: [RgbPixel(219, 172, 52), RgbPixel(226, 88, 37)],
+                    2: [RgbPixel(219, 172, 52), RgbPixel(226, 88, 37)],
+                }
+                self.modestate.lightbar_pairings = [[0, 2], [1]]
+            else:
+                self.mode = Mode.OFF
+                self.modestate = None
+        elif current_track == "Paris (Aeroplane Remix)":
+            if 0 < current_track_elapsed <= 34.5:
+                self.mode = Mode.RETROWAVE_GRID
+                if not isinstance(self.modestate, RetrowaveGridState):
+                    self.modestate = RetrowaveGridState()
+                    self.modestate.colour_pallette = [generate_random_color(), generate_random_color()]
+                    self.modestate.beat_interval = 2
+            elif current_track_elapsed > 34.5:
+                self.mode = Mode.COLOR_WAVE
+                if not isinstance(self.modestate, ColorwaveState):
+                    self.modestate = ColorwaveState()
+                    self.modestate.colour_pallette = [generate_random_color(), generate_random_color()]
+                    self.modestate.beat_interval = 1
+            else:
+                self.mode = Mode.OFF
+                self.modestate = None
+        elif current_track == "Hot":
+            self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+            self.modestate = RandomUpdateAmountOfLightbars()
+
         elif current_track == "We Don't Need Another Hero (Thunderdome)":
             if (0 < current_track_elapsed < 73.8) or \
                 (92.5 < current_track_elapsed < 149) or \
@@ -417,6 +569,12 @@ class LightbarDesigner:
             else:
                 self.mode = Mode.OFF
                 self.modestate = None
+        elif current_track == "Hard to Be Funky (feat. Lou Hayter)":
+            self.mode = Mode.RETROWAVE_GRID
+            if not isinstance(self.modestate, RetrowaveGridState):
+                self.modestate = RetrowaveGridState()
+            if not self.lightbar_center.pixels[16] == self.modestate.color:
+                self.modestate.color = generate_random_color()
         elif current_track == "Noot noot the police":
             if current_track_elapsed > 1.9:
                 self.mode = Mode.NOOT_NOOT
@@ -437,6 +595,11 @@ class LightbarDesigner:
                 self.modestate.beat_interval = 1
             else:
                 self.modestate.beat_interval = 2
+        elif current_track == "10 Years (Chromeo Remix)":
+            self.mode = Mode.COLOR_WAVE
+            if not isinstance(self.modestate, ColorwaveState):
+                self.modestate = ColorwaveState()
+            self.modestate.colour_pallette = [RgbPixel(34,139,34), RgbPixel(0,255,0)]
         elif current_track == "The Girl and the Robot":
             if current_track_elapsed > 222:
                 self.mode = Mode.OFF
@@ -448,6 +611,48 @@ class LightbarDesigner:
         elif current_track == "Make Me Thomas (feat. Jawn Legend)":
             self.mode = Mode.THOMAS_THE_DANK_ENGINE
             self.modestate = TankEngineState()
+        elif current_track == "Santa Catarina":
+            self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+            if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                self.modestate = OrganizedUpdateOfLightbars()
+            self.modestate.color_pallette = {
+                0: disco_pallette,  # limegreens
+                1: disco_pallette,  # skyblues
+                2: disco_pallette,  # limegreens
+            }
+        elif current_track == "Rasputin":
+            self.mode = Mode.LIGHTBARS_CHANGE_COLOR
+            if not isinstance(self.modestate, OrganizedUpdateOfLightbars):
+                self.modestate = OrganizedUpdateOfLightbars()
+            self.modestate.color_pallette = {
+                0: disco_pallette,  # limegreens
+                1: disco_pallette,  # skyblues
+                2: disco_pallette,  # limegreens
+            }
+        elif current_track == "Crescendolls":
+            self.mode = Mode.RETROWAVE_GRID
+            if not isinstance(self.modestate, RetrowaveGridState):
+                self.modestate = RetrowaveGridState()
+            if not self.lightbar_center.pixels[16] == self.modestate.color:
+                self.modestate.color = generate_random_color()
+        elif current_track == "Time Machine":
+            self.mode = Mode.RETROWAVE_GRID
+            if not isinstance(self.modestate, RetrowaveGridState):
+                self.modestate = RetrowaveGridState()
+            if not self.lightbar_center.pixels[16] == self.modestate.color:
+                self.modestate.color = generate_random_color()
+        elif current_track == "Jeg Vil Bare Danse":
+            self.mode = Mode.COLOR_WAVE
+            if not isinstance(self.modestate, ColorwaveState):
+                self.modestate = ColorwaveState()
+            self.modestate.colour_pallette = disco_pallette
+
+            if 52.4 < current_track_elapsed < 84.5:
+                self.modestate.beat_interval = 1
+            elif 134.5 < current_track_elapsed < 167:
+                self.modestate.beat_interval = 1
+            else:
+                self.modestate.beat_interval = 2
         elif current_track == "Amberina Sun":
             self.mode = Mode.PIXEL_SUN
 
@@ -471,6 +676,23 @@ class LightbarDesigner:
             else:
                 self.modestate.fade_in_counter = 0
                 self.modestate.fade_in = False
+        elif current_track == "Mopedbart":
+            self.mode = Mode.PIXEL_SUN
+
+            if not isinstance(self.modestate, PixelSunstate):
+                self.modestate = PixelSunstate()
+                self.lightbar_left.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
+                self.lightbar_center.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
+                self.lightbar_right.pixels = [RgbPixel(0, 0, 0) for _ in range(32)]
+
+            self.modestate.purple_sky = True
+
+            if 0 < current_track_elapsed < 36:
+                self.modestate.fade_in = True
+            else:
+                self.modestate.fade_in = False
+                self.modestate.fade_in_counter = 0
+                self.modestate.beat_shift = True
         else:
             # Select a random (good) effect for random song.
             if not self.traktor_metadata.master_deck_change_handled:
@@ -736,11 +958,11 @@ class LightbarDesigner:
                 self.lightbar_center.set_pixel(i, self.current_color)
                 self.lightbar_right.set_pixel(i, self.current_color)
 
-        if self.mode == Mode.LIGHTBARS_CHANGE_COLOR and isinstance(self.modestate, (RandomUpdateAmountOfLightbars, OrganizedUpdateOfLightbars)):
+        if self.mode == Mode.LIGHTBARS_CHANGE_COLOR and (isinstance(self.modestate, OrganizedUpdateOfLightbars) or isinstance(self.modestate, RandomUpdateAmountOfLightbars)):
             # Handle beat frequency first.
-            if self.modestate.update_frequency == UpdateFrequency.BEAT and update_type == UpdateType.BEAT:
-                pass
-            else:
+            if not update_type == UpdateType.BEAT and self.modestate.update_frequency == UpdateFrequency.BEAT:
+                return
+            elif not self.internal_pulse_counter % 12 == 0 and self.modestate.update_frequency == UpdateFrequency.HALF_BEAT:
                 return
 
             # Determine which bars to update second based on the update type.
