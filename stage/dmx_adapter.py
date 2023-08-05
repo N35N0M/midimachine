@@ -67,7 +67,9 @@ def map_stage_to_dmx(stage: Stage_2023, dmx_controller: dmx_driver) -> None:
     # Map left-dragon smoke
     dmx_controller.set_channel(current_channel, 255 if stage.dragon_left.smoke_machine_on else 0)  # Smoke emit
     dmx_controller.set_channel(current_channel+1, 0)  # Hardcode 0 for color select
+    dmx_controller.set_channel(current_channel+2, 0)  # Red
     dmx_controller.set_channel(current_channel+3, 255 if stage.dragon_left.smoke_machine_on else 0)  # Green
+    dmx_controller.set_channel(current_channel+4, 0)  # Blue
 
     current_channel += 6
 
@@ -87,7 +89,7 @@ def map_stage_to_dmx(stage: Stage_2023, dmx_controller: dmx_driver) -> None:
     dmx_controller.set_channel(current_channel, 255)  # Master dimmer?
     dmx_controller.set_channel(current_channel+1, stage.dragon_right.right_eye.red)  # Red?
     dmx_controller.set_channel(current_channel+2, stage.dragon_right.right_eye.green)  # Green?
-    dmx_controller.set_channel(current_channel+3, stage.dragon_right.right_eye.blue)  # Blue?
+    dmx_controller.set_channel(current_channel+3, stage.dragon_right.right_eye.blue)
 
     current_channel += 7
 
@@ -96,7 +98,9 @@ def map_stage_to_dmx(stage: Stage_2023, dmx_controller: dmx_driver) -> None:
     # Map right-dragon smoke
     dmx_controller.set_channel(current_channel, 255 if stage.dragon_right.smoke_machine_on else 0)  # Smoke emit
     dmx_controller.set_channel(current_channel+1, 0)  # Hardcode 0 for color select
+    dmx_controller.set_channel(current_channel+2, 0)  # Red
     dmx_controller.set_channel(current_channel+3, 255 if stage.dragon_right.smoke_machine_on else 0)  # Green
+    dmx_controller.set_channel(current_channel+4, 0)  # Blue
 
     current_channel += 6
 

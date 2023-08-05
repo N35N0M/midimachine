@@ -51,6 +51,7 @@ class RetrowaveGridState:
 class NootNootState:
     pulse_counter = 0
 
+
 sky = [
     RgbPixel(0, 191, 255),
     RgbPixel(0, 191, 255),
@@ -275,6 +276,13 @@ class BeatSquareBounceState:
     pixels: deque[RgbPixel] = deque([RgbPixel(0, 0, 0) for _ in range(64)])
     beat_synced = False
 
+@dataclasses.dataclass
+class ColorwaveState:
+    beat_interval = 1
+    previous_color: RgbPixel = RgbPixel(0, 0, 0)
+    colour_pallette: list[RgbPixel] = dataclasses.field(default_factory=lambda: [RgbPixel(255, 0, 0), RgbPixel(0, 255, 0), RgbPixel(0, 0, 255)])
+    pixels: list[RgbPixel] = dataclasses.field(default_factory=lambda: list([RgbPixel(0, 0, 0) for _ in range(96)]))
+
 class Mode(enum.Enum):
     DRAW_TOWARDS_RIGHT = 1
     RAINBOW_BLINK = 2
@@ -288,6 +296,7 @@ class Mode(enum.Enum):
     NOOT_NOOT = 10
     PIXEL_SUN = 11
     COLOR_WHEEL = 12
+    COLOR_WAVE = 13
 
 
 @dataclasses.dataclass
@@ -420,9 +429,18 @@ class LightbarDesigner:
                 self.mode = Mode.OFF
                 self.modestate = None
         if current_track == "Milestones":
-            self.mode = Mode.RETROWAVE_GRID
-            if not isinstance(self.modestate, RetrowaveGridState):
-                self.modestate = RetrowaveGridState()
+            # self.mode = Mode.RETROWAVE_GRID
+            # if not isinstance(self.modestate, RetrowaveGridState):
+            #     self.modestate = RetrowaveGridState()
+            self.mode = Mode.COLOR_WAVE
+            if not isinstance(self.modestate, ColorwaveState):
+                self.modestate = ColorwaveState()
+
+            if current_track_elapsed > 69.7:
+                self.modestate.beat_interval = 1
+            else:
+                self.modestate.beat_interval = 2
+
         if current_track == "The Girl and the Robot":
             if current_track_elapsed > 222:
                 self.mode = Mode.OFF
@@ -457,6 +475,31 @@ class LightbarDesigner:
             else:
                 self.modestate.fade_in_counter = 0
                 self.modestate.fade_in = False
+
+        if self.mode == Mode.COLOR_WAVE and isinstance(self.modestate, ColorwaveState):
+            new_color = self.modestate.previous_color
+
+            # Always copy a pixel on a beat
+            if self.internal_pulse_counter % 1 == 0:
+                for i in range(0, 47):
+                    self.modestate.pixels[i] = self.modestate.pixels[i + 1]
+                for i in range(95, 48, -1):
+                    self.modestate.pixels[i] = self.modestate.pixels[i-1]
+
+            if self.internal_beat_counter % self.modestate.beat_interval == 0 and update_type == UpdateType.BEAT:
+
+                while new_color == self.modestate.previous_color:
+                    new_color = random.sample(self.modestate.colour_pallette, 1)[0]
+                self.modestate.previous_color = new_color
+                self.modestate.pixels[47] = new_color
+                self.modestate.pixels[48] = new_color
+
+            self.lightbar_left.pixels = self.modestate.pixels[0:32]
+            self.lightbar_center.pixels = self.modestate.pixels[32:64]
+            self.lightbar_right.pixels = self.modestate.pixels[64:96]
+            return
+
+
 
         if self.mode == Mode.PIXEL_SUN and isinstance(self.modestate, PixelSunstate):
             """

@@ -145,6 +145,9 @@ class DragonDesigner:
             self.stage.dragon_right.right_eye = RgbPixel(0, 0, 0)
             return
         if self.mode == DragonMode.PULSING_EYES:
+            if update_type == UpdateType.BEAT:
+                if self.internal_beat_counter % 2 == 0:
+                    self.internal_pulse_counter = 0
             counter_val = self.internal_pulse_counter % 48
             if counter_val < 24:
                 self.stage.dragon_left.left_eye = RgbPixel(0, 0, int((255/24)*counter_val))
@@ -206,11 +209,11 @@ class DragonDesigner:
                     self.stage.dragon_right.right_eye = RgbPixel(0, 0, int(255 - ((255 / 24) * (counter_val - 24))))
 
                 # See if Thomas is currently under the left or right dragon
-                if self.stage.lightbar_one.pixels[31] == RgbPixel(107, 107, 107):
+                if self.stage.lightbar_one.pixels[16] == RgbPixel(107, 107, 107):
                     if self.modestate.last_fired == LastFired.RIGHT:
                         self.dragon_fire(self.stage.dragon_left)
                         self.modestate.last_fired = LastFired.LEFT
-                elif self.stage.lightbar_two.pixels[31] == RgbPixel(107, 107, 107):
+                elif self.stage.lightbar_three.pixels[16] == RgbPixel(107, 107, 107):
                     if self.modestate.last_fired == LastFired.LEFT:
                         self.dragon_fire(self.stage.dragon_right)
                         self.modestate.last_fired = LastFired.RIGHT
